@@ -965,6 +965,9 @@ int booti_setup(ulong image, ulong *relocated_addr, ulong *size,
 #define FIT_COMP_PROP		"compression"
 #define FIT_ENTRY_PROP		"entry"
 #define FIT_LOAD_PROP		"load"
+#ifdef CONFIG_SPACEX
+#define FIT_LOAD_SIZE_PROP	"load_size"
+#endif /* CONFIG_SPACEX */
 
 /* configuration node */
 #define FIT_KERNEL_PROP		"kernel"
@@ -1034,6 +1037,9 @@ int fit_image_get_arch(const void *fit, int noffset, uint8_t *arch);
 int fit_image_get_type(const void *fit, int noffset, uint8_t *type);
 int fit_image_get_comp(const void *fit, int noffset, uint8_t *comp);
 int fit_image_get_load(const void *fit, int noffset, ulong *load);
+#ifdef CONFIG_SPACEX
+int fit_image_get_load_size(const void *fit, int noffset, ulong *load_size);
+#endif /* CONFIG_SPACEX */
 int fit_image_get_entry(const void *fit, int noffset, ulong *entry);
 int fit_image_get_data(const void *fit, int noffset,
 				const void **data, size_t *size);

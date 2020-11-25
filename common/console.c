@@ -638,10 +638,44 @@ int console_record_avail(void)
 #endif
 
 /* test if ctrl-c was pressed */
+#ifdef CONFIG_SPACEX
+#define MAX_CTRLC_PATTERN 32
+static char ctrlc_pattern[MAX_CTRLC_PATTERN] = CONFIG_AUTOBOOT_STOP_STR;
+static char ctrlc_buffer[MAX_CTRLC_PATTERN];
+#endif /* CONFIG_SPACEX */
+
 static int ctrlc_disabled = 0;	/* see disable_ctrl() */
 static int ctrlc_was_pressed = 0;
 int ctrlc(void)
 {
+#ifdef CONFIG_SPACEX
+	int chars_read = 0;
+	int idx, pattern_len;
+	if (ctrlc_disabled && gd->have_console) {
+		while (tstc()) {
+			/* Shift character into the end of the buffer */
+			pattern_len = strnlen(ctrlc_pattern, MAX_CTRLC_PATTERN);
+			for (idx = 0; idx < (pattern_len-1); idx++)
+				ctrlc_buffer[idx] = ctrlc_buffer[idx+1];
+			ctrlc_buffer[idx] = getc();
+
+			/* If the pattern matches, treat it as a CTRL-C */
+			if (!memcmp(ctrlc_buffer, ctrlc_pattern, pattern_len)) {
+				ctrlc_was_pressed = 1;
+				ctrlc_disabled = 1;
+				return 1;
+			}
+
+			/* Limit maximum number of chars we can read */
+			if (chars_read++ >= pattern_len)
+				break;
+		}
+
+		/* Re-disable CTRL-C incase console_tstc() enabled it. */
+		ctrlc_disabled = 1;
+		return 0;
+	}
+#endif /* CONFIG_SPACEX */
 	if (!ctrlc_disabled && gd->have_console) {
 		if (tstc()) {
 			switch (getc()) {
@@ -701,6 +735,9 @@ int had_ctrlc (void)
 
 void clear_ctrlc(void)
 {
+#ifdef CONFIG_SPACEX
+	memset(ctrlc_buffer, 0, sizeof(ctrlc_buffer));
+#endif /* CONFIG_SPACEX */
 	ctrlc_was_pressed = 0;
 }
 

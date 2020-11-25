@@ -129,11 +129,13 @@ static void netboot_update_env(void)
 		env_set("netmask", tmp);
 	}
 
+#if defined(CONFIG_CMD_BOOTP)
 	if (net_hostname[0])
 		env_set("hostname", net_hostname);
 
 	if (net_root_path[0])
 		env_set("rootpath", net_root_path);
+#endif
 
 	if (net_ip.s_addr) {
 		ip_to_string(net_ip, tmp);
@@ -159,9 +161,10 @@ static void netboot_update_env(void)
 		env_set("dnsip2", tmp);
 	}
 #endif
+#if defined(CONFIG_CMD_BOOTP)
 	if (net_nis_domain[0])
 		env_set("domain", net_nis_domain);
-
+#endif
 #if defined(CONFIG_CMD_SNTP) && defined(CONFIG_BOOTP_TIMEOFFSET)
 	if (net_ntp_time_offset) {
 		sprintf(tmp, "%d", net_ntp_time_offset);
@@ -459,3 +462,30 @@ U_BOOT_CMD(
 );
 
 #endif  /* CONFIG_CMD_LINK_LOCAL */
+
+#if defined(CONFIG_CMD_RDATE)
+static int do_rdate(cmd_tbl_t *cmdtp, int flag, int argc,
+		    char * const argv[])
+{
+	if (argc < 2)
+		return CMD_RET_USAGE;
+
+	net_rdate_server = string_to_ip(argv[1]);
+	if (net_rdate_server.s_addr == 0)
+		return CMD_RET_USAGE;
+
+	if (net_loop(RDATE) < 0) {
+		printf("rdate failed: no response\n");
+		return CMD_RET_FAILURE;
+	}
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD(
+	rdate,		2,	1,	do_rdate,
+	"synchronize time via network",
+	"serverIp"
+);
+
+#endif  /* CONFIG_CMD_RDATE */

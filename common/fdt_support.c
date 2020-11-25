@@ -1750,6 +1750,115 @@ int fdt_setup_simplefb_node(void *fdt, int node, u64 base_address, u32 width,
 	return 0;
 }
 
+#ifdef CONFIG_SPACEX
+/**
+ * Adds an generic value to the fdt /chosen node.
+ *
+ * @fdt: ptr to device tree
+ * @name: Name for subnode
+ * @val: Pointer to the data to store in the subnode
+ * @len: Number of bytes in val
+ *
+ * Returns 0 on success, <0 on error.
+ */
+int fdt_add_to_chosen(void *fdt, const char *name,
+			  const void *val, int len)
+{
+	if (fdt == NULL) {
+		printf("ERROR: 'fdt' cannot be NULL.\n");
+		return -1;
+	}
+	if (name == NULL) {
+		printf("ERROR: 'name' cannot be NULL.\n");
+		return -1;
+	}
+	if (val == NULL) {
+		printf("ERROR: 'val' cannot be NULL.\n");
+		return -1;
+	}
+	if (len == 0) {
+		printf("ERROR: 'len' cannot be 0.\n");
+		return -1;
+	}
+
+	/* Find the "chosen" node */
+	int chosen = fdt_subnode_offset(fdt, 0, "chosen");
+	if (chosen < 0) {
+		printf("WARNING: could not get /chosen: %s.\n",
+		       fdt_strerror(chosen));
+		return -1;
+	}
+
+	/* Sets a property with the given subnode name in /chosen */
+	int err = fdt_setprop(fdt, chosen, name, val, len);
+	if (err < 0) {
+		printf("WARNING: could not set %s in /chosen: %s.\n", name,
+		       fdt_strerror(err));
+		return -1;
+	}
+
+	return 0;
+}
+
+/**
+ * Adds an environment variable to the fdt /chosen node.  The variable name can
+ * be the same as the sub-node name.  Alternatively, a different variable name
+ * can be used.  Sub-nodes are not created for environment variables that are
+ * unset.
+ */
+int fdt_add_env_to_chosen(void *fdt, const char *name, const char *env)
+{
+	if (env == NULL) {
+		env = name;
+	}
+
+	if (name == NULL) {
+		printf("ERROR: 'name' cannot be NULL.\n");
+		return -1;
+	}
+
+	char *str = env_get(env);
+	if (str == NULL) {
+		printf("WARNING: %s is not set. Not including %s in /chosen.\n",
+		       env, name);
+		return -1;
+	}
+
+	return fdt_add_to_chosen(fdt, name, str, strlen(str)+1);
+}
+
+/**
+ * Add a string value to fdt /chosen node.
+ */
+int fdt_add_string_to_chosen(void *fdt, const char *name, const char *str)
+{
+	if (str == NULL) {
+		printf("ERROR: 'str' cannot be NULL.\n");
+		return -1;
+	}
+
+	return fdt_add_to_chosen(fdt, name, str, strlen(str)+1);
+}
+
+/**
+ * Adds an 32-bit integer to the fdt /chosen node.
+ */
+int fdt_add_uint32_to_chosen(void *fdt, const char *name, uint32_t val)
+{
+	fdt32_t tmp = cpu_to_fdt32(val);
+	return fdt_add_to_chosen(fdt, name, &tmp, sizeof(tmp));
+}
+
+/**
+ * Adds an 64-bit integer to the fdt /chosen node.
+ */
+int fdt_add_uint64_to_chosen(void *fdt, const char *name, uint64_t val)
+{
+	fdt64_t tmp = cpu_to_fdt64(val);
+	return fdt_add_to_chosen(fdt, name, &tmp, sizeof(tmp));
+}
+#endif  /* CONFIG_SPACEX */
+
 /*
  * Update native-mode in display-timings from display environment variable.
  * The node to update are specified by path.

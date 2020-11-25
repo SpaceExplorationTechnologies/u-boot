@@ -602,4 +602,7 @@ config TEST_FDTDEC
 config LIB_DATE
 	bool
 
+config LIB_XILINX
+	bool
+
 endmenu

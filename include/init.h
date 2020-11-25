@@ -207,6 +207,10 @@ int misc_init_r(void);
 int init_func_vid(void);
 #endif
 
+#ifdef CONFIG_SPACEX
+int initr_flash(void);
+#endif /* CONFIG_SPACEX */
+
 /* common/board_info.c */
 int checkboard(void);
 int show_board_info(void);

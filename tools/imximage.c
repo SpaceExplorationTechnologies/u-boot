@@ -11,7 +11,6 @@
 #include "imagetool.h"
 #include <image.h>
 #include "imximage.h"
-#include <generated/autoconf.h>
 
 #define UNDEFINED 0xFFFFFFFF
 

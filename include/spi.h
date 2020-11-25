@@ -117,6 +117,14 @@ struct spi_slave {
 #define SPI_XFER_ONCE		(SPI_XFER_BEGIN | SPI_XFER_END)
 #define SPI_XFER_MMAP		BIT(2)	/* Memory Mapped start */
 #define SPI_XFER_MMAP_END	BIT(3)	/* Memory Mapped End */
+
+#ifdef CONFIG_SPACEX
+	/*
+	 * When using SPI NOR,
+	 * Can be set to SF_SINGLE_FLASH or SF_DUAL_PARALLEL_FLASH
+	 */
+	u8 option;
+#endif /* CONFIG_SPACEX */
 };
 
 /**

@@ -1,0 +1,10 @@
+/*
+ * dts file for Catson
+ *
+ */
+
+/dts-v1/;
+
+/ {
+	model = "Catson";
+};

@@ -182,9 +182,15 @@ obj-$(CONFIG_RISCV) += riscv/
 obj-$(CONFIG_X86) += x86/
 
 obj-$(CONFIG_ARCH_MVEBU) += mvebu/
+
+obj-$(CONFIG_CMD_UNECC) += unecc.o
+obj-$(CONFIG_CMD_FITS) += fits.o
+obj-$(CONFIG_CMD_NXID) += nxid.o
 endif # !CONFIG_SPL_BUILD
 
 obj-$(CONFIG_$(SPL_)CMD_TLV_EEPROM) += tlv_eeprom.o
+
+obj-$(CONFIG_SPACEX_CMD_SXID) += sxid.o
 
 # core command
 obj-y += nvedit.o

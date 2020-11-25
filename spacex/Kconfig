@@ -1,0 +1,45 @@
+menuconfig SPACEX
+	bool "SpaceX board support"
+	select CMD_RDATE
+	select SPACEX_ECC
+	select CMD_UNECC
+	help
+	  Enables code common to all SpaceX boards.
+
+	  This option should be enabled automatically by the board's Kconfig
+	  entry.
+
+if SPACEX
+
+config SPACEX_ECC
+	bool "Support for ECC"
+	help
+	  This option enables support for ECC armoring of the
+	  environment, device tree blob, and kernel image.
+
+config SPACEX_POR_GPIO
+    bool "Support for SpaceX POR GPIO configuration"
+    default y
+    help
+      This option enables the SpaceX Power on Reset GPIO sequence.  This is an
+      optionally defined device tree list of GPIOs in the por-gpio device tree.
+      Subnodes take the form of assert-low, assert-high, or wait-high and link
+      to a GPIO which will be set appropriately.  This option depends on the
+      platform containing a GPIO controller.
+
+config SPACEX_TELEM
+	bool "Enable BWP telemetry console"
+	default n
+	help
+	  This option enables a lightweight BWP console emitter.  When set,
+	  CONFIG_TELEM_DEST_IP must be defined and must be a multicast address.
+
+config TELEM_DEST_IP
+	string "BWP Telemetry IP Destination"
+	depends on SPACEX_TELEM
+	default 239.26.7.129
+	help
+	  This is the destination to send SpaceX BWP style console telemetry to.
+	  This address may be multicast.
+
+endif

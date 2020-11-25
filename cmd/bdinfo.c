@@ -12,6 +12,9 @@
 #include <env.h>
 #include <vsprintf.h>
 #include <linux/compiler.h>
+#ifdef CONFIG_SPACEX
+#include <malloc.h>
+#endif /* CONFIG_SPACEX */
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -326,6 +329,9 @@ static int do_bdinfo(cmd_tbl_t *cmdtp, int flag, int argc,
 #if !(CONFIG_IS_ENABLED(SYS_ICACHE_OFF) && CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
 	print_num("TLB addr", gd->arch.tlb_addr);
 #endif
+#ifdef CONFIG_SPACEX
+	print_num("mem_malloc_start", mem_malloc_start);
+#endif /* CONFIG_SPACEX */
 	print_num("relocaddr", gd->relocaddr);
 	print_num("reloc off", gd->reloc_off);
 	print_num("irq_sp", gd->irq_sp);	/* irq stack pointer */

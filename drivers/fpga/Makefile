@@ -10,6 +10,9 @@ obj-$(CONFIG_FPGA_VERSALPL) += versalpl.o
 obj-$(CONFIG_FPGA_VIRTEX2) += virtex2.o
 obj-$(CONFIG_FPGA_ZYNQPL) += zynqpl.o
 obj-$(CONFIG_FPGA_ZYNQMPPL) += zynqmppl.o
+ifdef CONFIG_FPGA_ZYNQMPPL_THROUGH_XILFPGA
+include $(srctree)/lib/xilinx/Makefile.ccflags
+endif
 obj-$(CONFIG_FPGA_XILINX) += xilinx.o
 obj-$(CONFIG_FPGA_LATTICE) += ivm_core.o lattice.o
 ifdef CONFIG_FPGA_ALTERA

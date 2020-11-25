@@ -13,6 +13,12 @@
 #include <linux/ctype.h>
 #include <u-boot/crc.h>
 
+#ifdef CONFIG_CMD_NXID
+#ifndef CONFIG_ID_EEPROM
+#define CONFIG_SYS_I2C_EEPROM_NXID
+#endif /* !CONFIG_ID_EEPROM */
+#endif /* CONFIG_CMD_NXID */
+
 #ifdef CONFIG_SYS_I2C_EEPROM_CCID
 #include "../common/eeprom.h"
 #define MAX_NUM_PORTS	8
@@ -143,6 +149,7 @@ static void show_eeprom(void)
 #endif
 }
 
+#ifdef CONFIG_ID_EEPROM
 /**
  * read_eeprom - read the EEPROM into memory
  */
@@ -195,6 +202,7 @@ static int read_eeprom(void)
 
 	return ret;
 }
+#endif /* CONFIG_ID_EEPROM */
 
 /**
  *  update_crc - update the CRC
@@ -210,6 +218,7 @@ static void update_crc(void)
 	e.crc = cpu_to_be32(crc);
 }
 
+#ifdef CONFIG_ID_EEPROM
 /**
  * prog_eeprom - write the EEPROM from memory
  */
@@ -394,7 +403,11 @@ int do_mac(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	cmd = argv[1][0];
 
 	if (cmd == 'r') {
+#ifndef CONFIG_SPACEX
 		read_eeprom();
+#else
+		mac_read_from_eeprom();
+#endif  /* CONFIG_SPACEX */
 		return 0;
 	}
 
@@ -461,6 +474,13 @@ int do_mac(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	return 0;
 }
+#else /* CONFIG_ID_EEPROM */
+int do_mac(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	show_eeprom();
+	return 0;
+}
+#endif /* !CONFIG_ID_EEPROM */
 
 /**
  * mac_read_from_eeprom - read the MAC addresses from EEPROM
@@ -485,10 +505,12 @@ int mac_read_from_eeprom(void)
 
 	puts("EEPROM: ");
 
+#ifdef CONFIG_ID_EEPROM
 	if (read_eeprom()) {
 		printf("Read failed.\n");
 		return 0;
 	}
+#endif /* CONFIG_ID_EEPROM */
 
 	if (!is_valid) {
 		printf("Invalid ID (%02x %02x %02x %02x)\n",
@@ -508,8 +530,24 @@ int mac_read_from_eeprom(void)
 	crc = crc32(0, (void *)&e, crc_offset);
 	crcp = (void *)&e + crc_offset;
 	if (crc != be32_to_cpu(*crcp)) {
+#ifndef CONFIG_SPACEX_NXID_BAD_OFFSET
 		printf("CRC mismatch (%08x != %08x)\n", crc, be32_to_cpu(e.crc));
 		return 0;
+#else
+		/* Older U-Boot had the CRC at the wrong place... Try
+		 * the other CRC. */
+		u32 crc1 = *crcp;
+
+		crc_offset = 0xcc;
+
+		crc = crc32(0, (void *)&e, crc_offset);
+		crcp = (void *)&e + crc_offset;
+		if (crc != be32_to_cpu(*crcp)) {
+			printf("CRC mismatch (%08x/%08x != %08x)\n", crc, crc1,
+			       be32_to_cpu(e.crc));
+			return 0;
+		}
+#endif /* CONFIG_SPACEX_NXID_BAD_OFFSET */
 	}
 
 #ifdef CONFIG_SYS_I2C_EEPROM_NXID
@@ -536,11 +574,15 @@ int mac_read_from_eeprom(void)
 				e.mac[i][4],
 				e.mac[i][5]);
 			sprintf(enetvar, i ? "eth%daddr" : "ethaddr", i);
+#ifndef CONFIG_SPACEX
 			/* Only initialize environment variables that are blank
 			 * (i.e. have not yet been set)
 			 */
 			if (!env_get(enetvar))
 				env_set(enetvar, ethaddr);
+#else
+			env_set(enetvar, ethaddr);
+#endif  /* CONFIG_SPACEX */
 		}
 	}
 
@@ -618,3 +660,49 @@ unsigned int get_cpu_board_revision(void)
 	return MPC85XX_CPU_BOARD_REV(be.major, be.minor);
 }
 #endif
+
+#ifndef CONFIG_ID_EEPROM
+U_BOOT_CMD(
+	mac, 3, 1,  do_mac,
+	"display and program the system ID and MAC addresses in EEPROM\n",
+	""
+);
+#endif /* CONFIG_ID_EEPROM */
+
+#ifdef CONFIG_CMD_NXID
+/**
+ * do_nxid() - Handler for the "nxid" command.
+ *
+ * @cmdtp:	A pointer to the command structure in the command table.
+ * @flag:	Flags, e.g. if the command was repeated with ENTER.
+ * @argc:	The number of arguments.
+ * @argv:	The command's arguments, as an array of strings.
+ *
+ * Return: CMD_RET_SUCCESS on success, CMD_RET_USAGE to display the
+ * usage, CMD_RET_FAILURE otherwise.
+ */
+int do_nxid(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+	void *data;
+
+	if (argc != 2)
+		return CMD_RET_USAGE;
+
+	data = (void *)simple_strtoul(argv[1], NULL, 16);
+	memcpy(&e, data, sizeof(e));
+	has_been_read = 1;
+
+	/* This function normally reads from the EEPROM, but since
+	 * we've set 'has_been_read' above, this step will be
+	 * skipped. */
+	mac_read_from_eeprom();
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD(
+	nxid, 2, 0, do_nxid,
+	"Set the address where the content of the NXID EEPROM has been loaded",
+	"<address>\n"
+);
+#endif /* CONFIG_CMD_NXID */

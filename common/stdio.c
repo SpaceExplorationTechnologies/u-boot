@@ -395,6 +395,9 @@ int stdio_add_devices(void)
 #ifdef CONFIG_CBMEM_CONSOLE
 	cbmemc_init();
 #endif
+#ifdef CONFIG_SPACEX_TELEM
+	drv_telem_init();
+#endif
 
 	return 0;
 }

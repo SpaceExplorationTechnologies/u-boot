@@ -544,7 +544,10 @@ extern int		net_restart_wrap;	/* Tried all network devices */
 
 enum proto_t {
 	BOOTP, RARP, ARP, TFTPGET, DHCP, PING, DNS, NFS, CDP, NETCONS, SNTP,
-	TFTPSRV, TFTPPUT, LINKLOCAL, FASTBOOT, WOL
+	TFTPSRV, TFTPPUT, LINKLOCAL, FASTBOOT, WOL,
+#ifdef CONFIG_CMD_RDATE
+	RDATE
+#endif
 };
 
 extern char	net_boot_file_name[1024];/* Boot File name */
@@ -585,6 +588,10 @@ extern struct in_addr	net_ntp_server;		/* the ip address to NTP */
 extern int net_ntp_time_offset;			/* offset time from UTC */
 #endif
 
+#if defined(CONFIG_CMD_RDATE)
+extern struct in_addr	net_rdate_server;
+#endif
+
 /* Initialize the network adapter */
 void net_init(void);
 int net_loop(enum proto_t);
@@ -599,11 +606,18 @@ int net_eth_hdr_size(void);
 int net_set_ether(uchar *xet, const uchar *dest_ethaddr, uint prot);
 int net_update_ether(struct ethernet_hdr *et, uchar *addr, uint prot);
 
+#ifndef CONFIG_SPACEX
 /* Set IP header */
 void net_set_ip_header(uchar *pkt, struct in_addr dest, struct in_addr source,
 		       u16 pkt_len, u8 proto);
 void net_set_udp_header(uchar *pkt, struct in_addr dest, int dport,
 				int sport, int len);
+#else
+void net_set_ip_header(uchar *pkt, struct in_addr dest, struct in_addr source,
+		       u16 pkt_len, u8 proto, uchar ttl);
+void net_set_udp_header(uchar *pkt, struct in_addr dest, int dport,
+				int sport, int len, uchar ttl);
+#endif /* CONFIG_SPACEX */
 
 /**
  * compute_ip_checksum() - Compute IP checksum
@@ -684,11 +698,21 @@ static inline void net_send_packet(uchar *pkt, int len)
  * @param sport Source UDP port
  * @param payload_len Length of data after the UDP header
  */
+#ifndef CONFIG_SPACEX
 int net_send_ip_packet(uchar *ether, struct in_addr dest, int dport, int sport,
 		       int payload_len, int proto, u8 action, u32 tcp_seq_num,
 		       u32 tcp_ack_num);
+#else
+int net_send_ip_packet(uchar *ether, struct in_addr dest, int dport, int sport,
+		       int payload_len, int proto, u8 action, u32 tcp_seq_num,
+		       u32 tcp_ack_num, uchar ttl);
+#endif
 int net_send_udp_packet(uchar *ether, struct in_addr dest, int dport,
 			int sport, int payload_len);
+#ifdef CONFIG_SPACEX
+int net_send_udp_packet_ttl(uchar *ether, struct in_addr dest, int dport,
+			int sport, int payload_len, uchar ttl);
+#endif
 
 /* Processes a received packet */
 void net_process_received_packet(uchar *in_packet, int len);

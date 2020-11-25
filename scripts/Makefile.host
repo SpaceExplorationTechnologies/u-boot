@@ -98,8 +98,8 @@ $(host-csingle): $(obj)/%: $(src)/%.c FORCE
 
 # Link an executable based on list of .o files, all plain c
 # host-cmulti -> executable
-quiet_cmd_host-cmulti	= HOSTLD  $@
-      cmd_host-cmulti	= $(HOSTCC) $(HOSTLDFLAGS) -o $@ \
+quiet_cmd_host-cmulti	= HOSTLD  $@$(SUFFIX)
+      cmd_host-cmulti	= $(HOSTCC) $(HOSTLDFLAGS) -o $@$(SUFFIX) \
 			  $(addprefix $(obj)/,$($(@F)-objs)) \
 			  $(HOST_LOADLIBES) $(HOSTLOADLIBES_$(@F))
 $(host-cmulti): FORCE
@@ -115,8 +115,8 @@ $(host-cobjs): $(obj)/%.o: $(src)/%.c FORCE
 
 # Link an executable based on list of .o files, a mixture of .c and .cc
 # host-cxxmulti -> executable
-quiet_cmd_host-cxxmulti	= HOSTLD  $@
-      cmd_host-cxxmulti	= $(HOSTCXX) $(HOSTLDFLAGS) -o $@ \
+quiet_cmd_host-cxxmulti	= HOSTLD  $@$(SUFFIX)
+      cmd_host-cxxmulti	= $(HOSTCXX) $(HOSTLDFLAGS) -o $@$(SUFFIX) \
 			  $(foreach o,objs cxxobjs,\
 			  $(addprefix $(obj)/,$($(@F)-$(o)))) \
 			  $(HOST_LOADLIBES) $(HOSTLOADLIBES_$(@F))

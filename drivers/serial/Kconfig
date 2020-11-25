@@ -850,4 +850,12 @@ config SYS_SDMR
 	depends on MPC8XX_CONS
 	default 0
 
+config STM_ASC_SERIAL
+	bool "STMicroelectronics on-chip UART"
+	depends on ARCH_GLL
+	help
+	  Select this to enable Asynchronous Serial Controller available
+	  on gllcff SoC. This is a basic implementation,  it supports
+	  following baudrate 9600, 19200, 38400, 57600 and 115200.
+
 endmenu

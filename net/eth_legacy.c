@@ -329,8 +329,9 @@ int eth_init(void)
 			return 0;
 		}
 		debug("FAIL\n");
-
+#if !defined(CONFIG_NET_DO_NOT_TRY_ANOTHER)
 		eth_try_another(0);
+#endif
 	} while (old_current != eth_current);
 
 	return -ETIMEDOUT;

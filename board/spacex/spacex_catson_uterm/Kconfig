@@ -1,0 +1,15 @@
+if TARGET_SPACEX_CATSON_UTERM
+
+config SYS_BOARD
+    default "spacex_catson_uterm"
+
+config SYS_VENDOR
+    default "spacex"
+
+config SYS_SOC
+    default "gllcff"
+
+config SYS_CONFIG_NAME
+    default "SPACEX_CATSON_UTERM"
+
+endif

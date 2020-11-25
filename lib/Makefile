@@ -139,4 +139,8 @@ quiet_cmd_build_OID_registry = GEN     $@
 
 clean-files     += oid_registry_data.c
 
+obj-$(CONFIG_SPACEX_ECC) += rscode/
+
+obj-$(CONFIG_LIB_XILINX) += xilinx/
+
 subdir-ccflags-$(CONFIG_CC_OPTIMIZE_LIBS_FOR_SPEED) += -O2

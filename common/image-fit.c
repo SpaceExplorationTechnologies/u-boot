@@ -523,6 +523,19 @@ void fit_image_print(const void *fit, int image_noffset, const char *p)
 			printf("unavailable\n");
 		else
 			printf("0x%08lx\n", load);
+
+#ifdef CONFIG_SPACEX
+		{
+			ulong load_size;
+
+			ret = fit_image_get_load_size(fit, image_noffset, &load_size);
+			printf("%s  Load Size:    ", p);
+			if (ret)
+				printf("unavailable\n");
+			else
+				genimg_print_size(load_size);
+		}
+#endif /* CONFIG_SPACEX */
 	}
 
 	/* optional load address for FDT */
@@ -820,6 +833,35 @@ int fit_image_get_load(const void *fit, int noffset, ulong *load)
 {
 	return fit_image_get_address(fit, noffset, FIT_LOAD_PROP, load);
 }
+
+#ifdef CONFIG_SPACEX
+
+/**
+ * fit_image_get_load_size() - get size property for given component image node
+ * @fit: pointer to the FIT format image header
+ * @noffset: component image node offset
+ * @load_size: pointer to the uint32_t that will hold the size
+ *
+ * fit_image_get_load_size() finds load_size property in a given
+ * component image node. If the property is found, its value is
+ * returned to the caller.
+ *
+ * The load_size is the length of the memory region that begins at the
+ * address specified by FIT_LOAD_PROP. It is intended to be used to
+ * prevent buffer overflows during the load operation.
+ *
+ * It is currently only used during fpga image decompression.
+ *
+ * returns:
+ *     0, on success
+ *     -1, on failure
+ */
+int fit_image_get_load_size(const void *fit, int noffset, ulong *load_size)
+{
+	return fit_image_get_address(fit, noffset, FIT_LOAD_SIZE_PROP, load_size);
+}
+
+#endif /* CONFIG_SPACEX */
 
 /**
  * fit_image_get_entry() - get entry point address property
@@ -2081,6 +2123,18 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 	      image_type == IH_TYPE_KERNEL_NOLOAD ||
 	      image_type == IH_TYPE_RAMDISK)) {
 		ulong max_decomp_len = len * 20;
+
+#ifdef CONFIG_SPACEX
+		/*
+		 * Limit the size of the decompression buffer. Falback to
+		 * the default estimate if the load_size property is not
+		 * available.
+		 */
+		ret = fit_image_get_load_size(fit, noffset, &max_decomp_len);
+		if (ret)
+			max_decomp_len = len * 20;
+#endif /* CONFIG_SPACEX */
+
 		if (load == data) {
 			loadbuf = malloc(max_decomp_len);
 			load = map_to_sysmem(loadbuf);

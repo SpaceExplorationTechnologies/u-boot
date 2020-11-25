@@ -24,7 +24,11 @@ static void set_icmp_header(uchar *pkt, struct in_addr dest)
 	 */
 	struct icmp_hdr *icmp = (struct icmp_hdr *)(pkt + IP_HDR_SIZE);
 
+#ifndef CONFIG_SPACEX
 	net_set_ip_header(pkt, dest, net_ip, IP_ICMP_HDR_SIZE, IPPROTO_ICMP);
+#else
+	net_set_ip_header(pkt, dest, net_ip, IP_ICMP_HDR_SIZE, IPPROTO_ICMP, 0);
+#endif /* CONFIG_SPACEX */
 
 	icmp->type = ICMP_ECHO_REQUEST;
 	icmp->code = 0;

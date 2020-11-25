@@ -64,8 +64,21 @@
 #if defined(CONFIG_GPIO_HOG)
 #include <asm/gpio.h>
 #endif
+#ifdef CONFIG_SPACEX
+#include <spacex/common.h>
+#endif /* CONFIG_SPACEX */
 
 DECLARE_GLOBAL_DATA_PTR;
+
+#ifdef CONFIG_SPACEX
+/**
+ * An optional hook used to initialize MAC addresses from a built-in unique ID.
+ */
+__weak int spacex_initr_ethaddr_from_board_id(void)
+{
+	return 0;
+}
+#endif /* CONFIG_SPACEX */
 
 ulong monitor_flash_len;
 
@@ -370,7 +383,11 @@ static int initr_binman(void)
 }
 
 #if defined(CONFIG_MTD_NOR_FLASH)
+#ifndef CONFIG_SPACEX
 static int initr_flash(void)
+#else
+int initr_flash(void)
+#endif /* CONFIG_SPACEX */
 {
 	ulong flash_size = 0;
 	bd_t *bd = gd->bd;
@@ -760,7 +777,9 @@ static init_fnc_t init_sequence_r[] = {
 #endif
 	power_init_board,
 #ifdef CONFIG_MTD_NOR_FLASH
+#if !defined(CONFIG_SPACEX)
 	initr_flash,
+#endif /* !CONFIG_SPACEX */
 #endif
 	INIT_FUNC_WATCHDOG_RESET
 #if defined(CONFIG_PPC) || defined(CONFIG_M68K) || defined(CONFIG_X86)
@@ -823,6 +842,9 @@ static init_fnc_t init_sequence_r[] = {
 	initr_status_led,
 #endif
 	/* PPC has a udelay(20) here dating from 2002. Why? */
+#ifdef CONFIG_SPACEX
+	spacex_initr_ethaddr_from_board_id,
+#endif /* CONFIG_SPACEX */
 #ifdef CONFIG_CMD_NET
 	initr_ethaddr,
 #endif
@@ -868,6 +890,10 @@ static init_fnc_t init_sequence_r[] = {
 #if defined(CONFIG_M68K) && defined(CONFIG_BLOCK_CACHE)
 	blkcache_init,
 #endif
+#ifdef CONFIG_SPACEX
+	spacex_splash,
+	INIT_FUNC_WATCHDOG_RESET
+#endif /* CONFIG_SPACEX */
 	run_main_loop,
 };
 

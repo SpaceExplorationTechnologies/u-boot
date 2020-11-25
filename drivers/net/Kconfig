@@ -178,6 +178,52 @@ config E1000_SPI
 	  This does not do anything useful unless you set at least one
 	  of CONFIG_CMD_E1000 or CONFIG_E1000_SPI_GENERIC.
 
+config E1000_NO_NVM
+	bool "E1000 has no NVRAM"
+	depends on E1000
+	help
+	  Say Y here if the E1000 devices in this machine do not have attached
+	  NVRAM (e.g. EEPROM) devices.
+
+config SPACEX_E1000_IGB_USES_SERDES
+	bool "I210 uses SERDES, not copper"
+	depends on E1000
+	help
+	  Say Y here if you have an Intel i210 controller that is hooked up via
+	  SERDES to its peer, i.e., there is no copper PHY involved. This will
+	  configure autonegotiation/link status directly in the Physical Coding
+	  Sublayer (PCS) registers.
+
+	  Note that this only applies to I210IS parts (note the 'S' for
+	  SERDES/SGMII) -- I210IT parts provide only copper Ethernet.
+
+config SPACEX_E1000_PCS_AUTONEG
+	bool "Enable autonegotiation on PCS link"
+	depends on E1000
+	help
+	  This enables autonegotiation in the Physical Coding Sublayer (PCS)
+	  when bringing up a SERDES link. Say Y if your E1000 network devices
+	  use straight SGMII links to communicate.
+
+	  This implies there is no optics-signal-detect GPIO plugged into the
+	  SDP1 pin -- that pin will be forced high so that the code always
+	  thinks there is signal.
+
+config SPACEX_E1000_ETH_NUMBER
+	bool "Use 'eth' prefix"
+	depends on E1000
+	default n
+	help
+	  Use the traditional "eth" prefix when naming the interfaces.
+
+config SPACEX_E1000_ETH_BASE_NUMBER
+	int "Base interface number"
+	depends on E1000 && SPACEX_E1000_ETH_NUMBER
+	default 0
+	help
+	  The starting number when numbering the interfaces with the "eth"
+	  prefix.
+
 config CMD_E1000
 	bool "Enable the e1000 command"
 	depends on E1000
@@ -185,6 +231,13 @@ config CMD_E1000
 	  This enables the 'e1000' management command for E1000 devices. When
 	  used on devices with SPI support you can reprogram the EEPROM from
 	  U-Boot.
+
+config SPACEX_CMD_E1000_PHY
+	bool "Enable PHY register I/O from the e1000 command"
+	depends on CMD_E1000
+	help
+	  Say Y here if you want to enable the 'e1000 phy' command to
+	  read/write internal PHY registers.
 
 config ETH_SANDBOX
 	depends on DM_ETH && SANDBOX

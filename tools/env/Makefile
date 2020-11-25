@@ -13,7 +13,9 @@ HOST_EXTRACFLAGS  = -I$(srctree)/tools \
 		$(patsubst -I%,-idirafter%, $(filter -I%, $(UBOOTINCLUDE))) \
 		-idirafter $(srctree)/tools/env \
 		-DUSE_HOSTCC \
-		-DTEXT_BASE=$(TEXT_BASE)
+		-DTEXT_BASE=$(TEXT_BASE) \
+		-DTOOLS_BUILD \
+		-DCONFIG_SPACEX -DCONFIG_SPACEX_ECC -Ilib
 
 ifeq ($(MTD_VERSION),old)
 HOST_EXTRACFLAGS += -DMTD_OLD
@@ -22,9 +24,16 @@ endif
 always := fw_printenv
 hostprogs-y := fw_printenv
 
+ECC_OBJS = ../../spacex/ecc.o \
+	../../lib/md5.o \
+	../../lib/rscode/berlekamp.o \
+	../../lib/rscode/gtables.o \
+	../../lib/rscode/rs.o
+
 lib-y += fw_env.o \
 	crc32.o ctype.o linux_string.o \
-	env_attr.o env_flags.o
+	env_attr.o env_flags.o \
+	$(ECC_OBJS)
 
 fw_printenv-objs := fw_env_main.o $(lib-y)
 

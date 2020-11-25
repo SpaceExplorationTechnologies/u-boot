@@ -1,0 +1,2 @@
+config UBOOT_FPGA_LOADER
+	bool "Enable loading fpga from bitstream during u-boot"

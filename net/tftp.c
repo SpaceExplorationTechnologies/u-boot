@@ -23,8 +23,14 @@ DECLARE_GLOBAL_DATA_PTR;
 
 /* Well known TFTP port # */
 #define WELL_KNOWN_PORT	69
+
+#ifndef CONFIG_TFTP_TIMEOUT
 /* Millisecs to timeout for lost pkt */
 #define TIMEOUT		5000UL
+#else
+#define TIMEOUT CONFIG_TFTP_TIMEOUT
+#endif
+
 #ifndef	CONFIG_NET_RETRY_COUNT
 /* # of timeouts before giving up */
 # define TIMEOUT_COUNT	10
@@ -76,6 +82,9 @@ static int	tftp_remote_port;
 /* The UDP port at our end */
 static int	tftp_our_port;
 static int	timeout_count;
+#ifdef CONFIG_SPACEX
+int tftp_total_timeout_count;
+#endif
 /* packet sequence number */
 static ulong	tftp_cur_block;
 /* last packet sequence number received */
@@ -596,6 +605,9 @@ static void tftp_handler(uchar *pkt, unsigned dest, struct in_addr sip,
 
 static void tftp_timeout_handler(void)
 {
+#ifdef CONFIG_SPACEX
+	tftp_total_timeout_count++;
+#endif
 	if (++timeout_count > timeout_count_max) {
 		restart("Retry count exceeded");
 	} else {
@@ -745,6 +757,9 @@ void tftp_start(enum proto_t protocol)
 #endif
 	tftp_remote_port = WELL_KNOWN_PORT;
 	timeout_count = 0;
+#ifdef CONFIG_SPACEX
+	tftp_total_timeout_count = 0;
+#endif
 	/* Use a pseudo-random port unless a specific port is set */
 	tftp_our_port = 1024 + (get_timer(0) % 3072);
 

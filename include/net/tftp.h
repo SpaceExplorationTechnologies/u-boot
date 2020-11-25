@@ -25,6 +25,10 @@ void tftp_start_server(void);	/* Wait for incoming TFTP put */
 extern ulong tftp_timeout_ms;
 extern int tftp_timeout_count_max;
 
+#ifdef CONFIG_SPACEX
+extern int tftp_total_timeout_count;
+#endif
+
 /**********************************************************************/
 
 #endif /* __TFTP_H__ */

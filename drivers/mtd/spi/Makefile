@@ -17,7 +17,12 @@ else
 spi-nor-y += spi-nor-core.o
 endif
 
+ifdef CONFIG_STM_FSM_SPI_FLASH
+obj-$(CONFIG_SPI_FLASH)	+= st_sfc_c.o
+else
 obj-$(CONFIG_SPI_FLASH) += spi-nor.o
+endif
+
 obj-$(CONFIG_SPI_FLASH_DATAFLASH) += sf_dataflash.o
 obj-$(CONFIG_$(SPL_)SPI_FLASH_MTD) += sf_mtd.o
 obj-$(CONFIG_SPI_FLASH_SANDBOX) += sandbox.o

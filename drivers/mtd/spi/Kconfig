@@ -136,6 +136,18 @@ config SPI_FLASH_STMICRO
 	help
 	  Add support for various STMicro SPI flash chips (M25Pxxx and N25Qxxx)
 
+config SPACEX_SPI_FLASH_STMICRO_SOFT_RESET
+	bool "STMicro Soft Reset Support"
+	depends on SPI_FLASH_STMICRO
+	help
+	  Enable soft-reset of STMicro parts during boot. Not all parts support the
+	  RESET ENABLE and RESET MEMORY commands, so this should only be enabled on
+	  systems where command support has been verified. This helps deal with
+	  cases where the flash is not reset on boot, causing issues with the u-boot
+	  initialization. This has only been tested on Micron MT25QL02GC flash.
+
+	  If unsure, say N
+
 config SPI_FLASH_SST
 	bool "SST SPI flash support"
 	help
@@ -203,5 +215,13 @@ config SPL_SPI_FLASH_MTD
           Enable the MTD support for the SPI flash layer in SPL.
 
 	  If unsure, say N
+
+config STM_FSM_SPI_FLASH
+	bool "STMicro FSM SPI controller"
+	depends on SPI_FLASH
+	default n
+	help
+	  Adds support for the STM FSM SPI controller.  Is incompatible with other
+	  SPI devices.
 
 endmenu # menu "SPI Flash Support"

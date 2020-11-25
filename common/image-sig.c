@@ -333,7 +333,11 @@ int fit_image_verify_required_sigs(const void *fit, int image_noffset,
 	if (sig_node < 0) {
 		debug("%s: No signature node found: %s\n", __func__,
 		      fdt_strerror(sig_node));
+#ifndef CONFIG_SPACEX
 		return 0;
+#else /* !CONFIG_SPACEX */
+		return -1;
+#endif /* CONFIG_SPACEX */
 	}
 
 	fdt_for_each_subnode(noffset, sig_blob, sig_node) {
@@ -551,7 +555,11 @@ int fit_config_verify_required_sigs(const void *fit, int conf_noffset,
 	if (sig_node < 0) {
 		debug("%s: No signature node found: %s\n", __func__,
 		      fdt_strerror(sig_node));
+#ifndef CONFIG_SPACEX
 		return 0;
+#else /* !CONFIG_SPACEX */
+		return -1;
+#endif /* CONFIG_SPACEX */
 	}
 
 	fdt_for_each_subnode(noffset, sig_blob, sig_node) {

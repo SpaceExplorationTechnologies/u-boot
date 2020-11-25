@@ -31,4 +31,10 @@ void md5 (unsigned char *input, int len, unsigned char output[16]);
 void md5_wd (unsigned char *input, int len, unsigned char output[16],
 		unsigned int chunk_sz);
 
+#ifdef CONFIG_SPACEX_ECC
+void MD5Init(struct MD5Context *ctx);
+void MD5Update(struct MD5Context *ctx, unsigned char const *buf, unsigned len);
+void MD5Final(unsigned char digest[16], struct MD5Context *ctx);
+#endif /* CONFIG_SPACEX_ECC */
+
 #endif /* _MD5_H */

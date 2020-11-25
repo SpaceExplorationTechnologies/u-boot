@@ -1,0 +1,363 @@
+/*
+ * Copyright (C) STMicroelectronics Ltd. 2014
+ *
+ * SPDX-License-Identifier:     GPL-2.0+
+ *
+ * All rights reserved.
+ */
+
+#ifndef __INCLUDE_STM_GLLCFF_REG_H
+#define __INCLUDE_STM_GLLCFF_REG_H
+
+#include <stm/regtype.h>
+#include <stm/stxxxxxreg.h>
+
+/* Time stamp generator */
+#define GLLCFF_TS_GEN_BASE_ADDRESS 0x26180000
+#define GLLCFF_TS_GEN_CNTR_OFF 0x00
+#define GLLCFF_TS_GEN_CNTFIDO_OFF 0x20
+
+/* Functional cluster base addresses */
+#ifndef GLLCFF_FC_BOOTDEV_BASE
+#define GLLCFF_FC_BOOTDEV_BASE 0x1E000000
+#endif
+
+/* FSM SPI Controller Base (in the FlashSS) */
+#ifndef GLLCFF_SYSCFG_FLASHSS_BOOT_BASE
+#define GLLCFF_SYSCFG_FLASHSS_BOOT_BASE (GLLCFF_FC_BOOTDEV_BASE + 0x300000)
+#endif
+
+#ifndef GLLCFF_SYSCFG_FLASH_PIOMUX_BASE
+#define GLLCFF_SYSCFG_FLASH_PIOMUX_BASE (GLLCFF_FC_BOOTDEV_BASE + 0x400000)
+#endif
+
+#ifndef CONFIG_SYS_STM_SPI_FSM1_BASE
+#define CONFIG_SYS_STM_SPI_FSM1_BASE (GLLCFF_SYSCFG_FLASHSS_BOOT_BASE + 0x2000)
+#endif
+
+#ifndef CONFIG_SYS_STM_SPI_FSM2_BASE
+#define CONFIG_SYS_STM_SPI_FSM2_BASE (GLLCFF_SYSCFG_FLASHSS_BOOT_BASE + 0x3000)
+#endif
+
+#ifndef CONFIG_SYS_STM_SPI_FSM_BASE
+#define CONFIG_SYS_STM_SPI_FSM_BASE (CONFIG_SYS_STM_SPI_FSM1_BASE)
+#endif
+
+/* FSM EMMC Controller Base (in the FlashSS) */
+#ifndef CONFIG_SYS_MMC0_BASE
+#define CONFIG_SYS_MMC0_BASE (GLLCFF_SYSCFG_FLASHSS_BOOT_BASE + 0x0)
+#endif
+
+/* ARM Cortex-A53 Configuration Registers */
+#ifndef STM_A53_CONFIG_BASE
+#define STM_A53_CONFIG_BASE 0x26000000
+#endif
+
+/* cluster security */
+#ifndef GLLCFF_FC_SECURITY_BASE
+#define GLLCFF_FC_SECURITY_BASE 0x22000000
+#endif
+
+/* cluster connectivity */
+#ifndef GLLCFF_CONNECTIVITY_BASE
+#define GLLCFF_CONNECTIVITY_BASE 0x16000000
+#endif
+
+#define GLLCFF_CONNECTIVITY_GMAC1 0x00800000 /* GMAC #1 */
+#define STM_STMAC1_BASE (GLLCFF_CONNECTIVITY_BASE + GLLCFF_CONNECTIVITY_GMAC1)
+#define GMAC_SS_CONF (0x2000 + 0x00)
+
+#define GLLCFF_CONNECTIVITY_PHY2 0x00B00000 /* PHY #2 */
+#define STM_PHY2_BASE (GLLCFF_CONNECTIVITY_BASE + GLLCFF_CONNECTIVITY_PHY2)
+
+#define GMAC_1_RST 7080
+#define RST_GMAC_1_APP_N 0
+#define RST_GMAC_1_CTRL_N 1
+
+#define GMAC_1_CLK 7085
+#define CLKEN_GMAC_1 0
+
+#define MIPHY_2_RST 7110
+#define RST_MIPHY_2_GLOBAL_N 0
+#define RST_MIPHY_2_OSC_N 1
+#define RST_SGMII_1_N 2
+
+#define MIPHY_2_CLK 7115
+#define CLKEN_MIPHY_2 0
+#define CS_CLK_REF_INT_EN 1
+
+#define MIPHY_2_CS_CONFIGURATION 7437
+#define PLL_VCODIV_RATIO_L 0
+#define PLL_VCODIV_RATIO_H 2
+#define PLL_VCODIV_PUP 3
+#define PLL_SSC_EN 4
+#define CS_CLK_FREF_DIG_EN 5
+#define CS_REFDIV_RATIO_L 6
+#define CS_REFDIV_RATIO_H 7
+#define RC_IBIAS_UP 9
+
+#define MIPHY_2_SGMII_TX_CONFIGURATION 7438
+#define SGMII_TX_OUTPUT_EN 0
+#define SGMII_POWER_MODE_L 3
+#define SGMII_POWER_MODE_H 5
+#define SGMII_TX_C0_L 8
+#define SGMII_TX_C0_H 13
+
+#define MIPHY_2_LINK 7444
+#define EXT_CTRL_L 0
+#define EXT_CTRL_H 1
+
+/* cluster backbone */
+#ifndef GLLCFF_FC_BACKBONE_BASE
+#define GLLCFF_FC_BACKBONE_BASE 0x8000000
+#endif
+
+#define COMMS_BASE 0x0800000
+#define UART0_BASE 0x0050000
+#define UART1_BASE 0x0060000
+/* GLLCFF_SBC_ASC0_BASE=0x8850000 */
+#ifndef GLLCFF_SBC_ASC0_BASE
+#define GLLCFF_SBC_ASC0_BASE (GLLCFF_FC_BACKBONE_BASE + COMMS_BASE + UART0_BASE)
+#endif
+/* GLLCFF_SBC_ASC1_BASE=0x8860000 */
+#ifndef GLLCFF_SBC_ASC1_BASE
+#define GLLCFF_SBC_ASC1_BASE (GLLCFF_FC_BACKBONE_BASE + COMMS_BASE + UART1_BASE)
+#endif
+
+/* Alternate function on PIO */
+#ifndef GLLCFF_SYSCFG_PIO_A_BASE
+#define GLLCFF_SYSCFG_PIO_A_BASE (GLLCFF_FC_BACKBONE_BASE + 0x200000)
+#endif
+#ifndef GLLCFF_SYSCFG_PIO_B_BASE
+#define GLLCFF_SYSCFG_PIO_B_BASE (GLLCFF_FC_BACKBONE_BASE + 0x210000)
+#endif
+#ifndef GLLCFF_SYSCFG_PIO_C_BASE
+#define GLLCFF_SYSCFG_PIO_C_BASE (GLLCFF_FC_BACKBONE_BASE + 0x220000)
+#endif
+
+#ifndef GLLCFF_PIO_FLASH_BASE
+#define GLLCFF_PIO_FLASH_BASE (GLLCFF_FC_BOOTDEV_BASE + 0x400000)
+#endif
+
+#ifndef GLLCFF_PIO_A_BASE
+#define GLLCFF_PIO_A_BASE (GLLCFF_FC_BACKBONE_BASE + 0x100000)
+#endif
+
+#ifndef GLLCFF_PIO_B_BASE
+#define GLLCFF_PIO_B_BASE (GLLCFF_FC_BACKBONE_BASE + 0x110000)
+#endif
+
+#ifndef GLLCFF_PIO_C_BASE
+#define GLLCFF_PIO_C_BASE (GLLCFF_FC_BACKBONE_BASE + 0x120000)
+#endif
+
+/*return base address of PIO block indexed with  port_#x */
+#define STM_PIO_BASE(x)							\
+	(((x) < 10) ? (GLLCFF_PIO_FLASH_BASE + (0x1000 * ((x)-0)))	     \
+		    : ((x) < 20) ? (GLLCFF_PIO_A_BASE + (0x1000 * ((x)-10)))   \
+				 : ((x) < 30) ? (GLLCFF_PIO_B_BASE	     \
+						 + (0x1000 * ((x)-20)))	\
+					      : (GLLCFF_PIO_C_BASE	     \
+						 + (0x1000 * ((x)-30))))
+
+/* SYSCONF number, to complete according to u-boot usage of sys-conf  */
+#define SW_GLOBAL_RESET 600 // thru SYS-CFG#600 sw can manage global reset
+
+/* thru SYS-CFG#20000 sw can manage alternate function of flash subsystem */
+#define SS_FLASH_ALT_FUNC 20000
+/* thru SYS-CFG#20040 sw can manage enable PIO_A output */
+#define SS_FLASH_OUPUT_ENABLE  20040
+
+#define SS_BOOT_MODE 418
+#define SS_MMC0_PIO_CONF 20080
+
+/* Alternate function of PIO_A subsystem */
+#define SS_PIO_A_ALT_FUNC  0
+/* Alternate function of PIO_B subsystem */
+#define SS_PIO_B_ALT_FUNC 22000
+/* Alternate function of PIO_C subsystem */
+#define SS_PIO_C_ALT_FUNC 23000
+/* Enable PIO_A output */
+#define SS_PIO_A_OUPUT_ENABLE 40
+/* Enable PIO_B output */
+#define SS_PIO_B_OUPUT_ENABLE 22040
+/* Enable PIO_C output */
+#define SS_PIO_C_OUPUT_ENABLE 23040
+/* Retiming of pin#0 of first port of PIO_A block */
+#define SS_PIO_A_RETIMING 100
+/* Retiming of pin#0 of first port of PIO_B block */
+#define SS_PIO_B_RETIMING 22100
+/* Retiming of pin#0 of first port of PIO_C block */
+#define SS_PIO_C_RETIMING 23100
+
+/* SYSCONF registers */
+#define GLLCFF_SYSCONF_000_799_BASE (GLLCFF_FC_BACKBONE_BASE + 0x1000000)
+#define GLLCFF_SYSCONF_800_999_BASE (GLLCFF_FC_BACKBONE_BASE + 0x1400000)
+#define GLLCFF_SYSCONF_2000_2799_BASE (GLLCFF_FC_BACKBONE_BASE + 0x5000000)
+#define GLLCFF_SYSCONF_2800_2999_BASE (GLLCFF_FC_BACKBONE_BASE + 0x5400000)
+#define GLLCFF_SYSCONF_7000_7799_BASE (GLLCFF_CONNECTIVITY_BASE + 0x1000000)
+#define GLLCFF_SYSCONF_7800_7999_BASE (GLLCFF_CONNECTIVITY_BASE + 0x1400000)
+#define GLLCFF_SYSCONF_11000_11799_BASE (GLLCFF_FC_BOOTDEV_BASE + 0x1000000)
+#define GLLCFF_SYSCONF_13000_13799_BASE (GLLCFF_FC_SECURITY_BASE + 0x1100000)
+#define GLLCFF_SYSCONF_13800_13999_BASE (GLLCFF_FC_SECURITY_BASE + 0x1400000)
+
+#define GLLCFF_SYSCONF_0_BASE (GLLCFF_SYSCFG_PIO_A_BASE + 0x0)
+#define GLLCFF_SYSCONF_400_BASE (GLLCFF_SYSCONF_000_799_BASE + 0x130000)
+#define GLLCFF_SYSCONF_500_BASE (GLLCFF_SYSCFG_PIO_A_BASE + 0x7D0)
+#define GLLCFF_SYSCONF_600_BASE (GLLCFF_SYSCONF_000_799_BASE + 0x132000)
+#define GLLCFF_SYSCONF_700_BASE (GLLCFF_SYSCONF_000_799_BASE + 0x1F0000)
+#define GLLCFF_SYSCONF_2000_BASE (GLLCFF_SYSCONF_2000_2799_BASE + 0x0)
+#define GLLCFF_SYSCONF_2447_BASE (GLLCFF_SYSCONF_2000_2799_BASE + 0x1300BC)
+#define GLLCFF_SYSCONF_2448_BASE (GLLCFF_SYSCONF_2000_2799_BASE + 0x1300C0)
+#define GLLCFF_SYSCONF_7000_BASE (GLLCFF_SYSCONF_7000_7799_BASE + 0x0)
+#define GLLCFF_SYSCONF_7005_BASE (GLLCFF_SYSCONF_7000_7799_BASE + 0x8000)
+#define GLLCFF_SYSCONF_7400_BASE (GLLCFF_SYSCONF_7000_7799_BASE + 0x130000)
+#define GLLCFF_SYSCONF_7830_BASE (GLLCFF_SYSCONF_7800_7999_BASE + 0x1400)
+#define GLLCFF_SYSCONF_7848_BASE (GLLCFF_SYSCONF_7800_7999_BASE + 0x2000)
+#define GLLCFF_SYSCONF_11000_BASE (GLLCFF_SYSCONF_11000_11799_BASE + 0x0)
+#define GLLCFF_SYSCONF_11100_BASE (GLLCFF_SYSCONF_11000_11799_BASE + 0x100000)
+#define GLLCFF_SYSCONF_11415_BASE (GLLCFF_SYSCONF_11000_11799_BASE + 0x13003C)
+#define GLLCFF_SYSCONF_11700_BASE (GLLCFF_SYSCONF_11000_11799_BASE + 0x1F0000)
+#define GLLCFF_SYSCONF_13400_BASE (GLLCFF_SYSCONF_13000_13799_BASE + 0x30000)
+#define GLLCFF_SYSCONF_13950_BASE (GLLCFF_SYSCONF_13800_13999_BASE + 0x20000)
+#define GLLCFF_SYSCONF_20000_BASE (GLLCFF_SYSCFG_FLASH_PIOMUX_BASE)
+#define GLLCFF_SYSCONF_22000_BASE (GLLCFF_SYSCFG_PIO_B_BASE)
+#define GLLCFF_SYSCONF_23000_BASE (GLLCFF_SYSCFG_PIO_C_BASE)
+#define GLLCFF_SYSCONF_23500_BASE (GLLCFF_SYSCFG_PIO_C_BASE + 0x07D0)
+
+/*
+ * GLLCFF System Configuration "accessors"
+ * x is a SYSTEM-CONFIG number, e.g SW_GLOBAL_RESET
+ */
+
+/*
+ * GLLCFF System Configuration "accessors"
+ * x is a SYSTEM-CONFIG number, e.g SW_GLOBAL_RESET
+ */
+static inline stm_u32_reg_t GLLCFF_SYSCFG(unsigned long x)
+{
+	if (x < 124) {
+		return STM_U32_REG(GLLCFF_SYSCONF_0_BASE + (x) * 0x4);
+	} else if (x < 400) {
+		return STM_U32_REG(0);
+	} else if (x < 500) {
+		return STM_U32_REG(GLLCFF_SYSCONF_400_BASE + (x - 400) * 0x4);
+	} else if (x < 600) {
+		return STM_U32_REG(GLLCFF_SYSCONF_500_BASE + (x - 500) * 0x4);
+	} else if (x < 700) {
+		return STM_U32_REG(GLLCFF_SYSCONF_600_BASE + (x - 600) * 0x4);
+	} else if (x < 800) {
+		return STM_U32_REG(GLLCFF_SYSCONF_700_BASE + (x - 700) * 0x4);
+	} else if (x < 1000) {
+		return STM_U32_REG(GLLCFF_SYSCONF_800_999_BASE + (x - 800) * 0x4);
+	} else if (x < 2000) {
+		return STM_U32_REG(0);
+	} else if (x < 2447) {
+		return STM_U32_REG(GLLCFF_SYSCONF_2000_BASE + (x - 2000) * 0x4);
+	} else if (x < 2448) {
+		return STM_U32_REG(GLLCFF_SYSCONF_2447_BASE + (x - 2447) * 0x4);
+	} else if (x < 2800) {
+		return STM_U32_REG(GLLCFF_SYSCONF_2448_BASE + (x - 2448) * 0x4);
+	} else if (x < 3000) {
+		return STM_U32_REG(GLLCFF_SYSCONF_2800_2999_BASE + (x - 2800) * 0x4);
+	} else if (x < 7000) {
+		return STM_U32_REG(0);
+	} else if (x < 7005) {
+		return STM_U32_REG(GLLCFF_SYSCONF_7000_BASE + (x - 7000) * 0x4);
+	} else if (x == 7080) {
+		return STM_U32_REG(GLLCFF_SYSCONF_7000_BASE + 0x80000);
+	} else if (x == 7085) {
+		return STM_U32_REG(GLLCFF_SYSCONF_7000_BASE + 0x88000);
+	} else if (x == 7110) {
+		return STM_U32_REG(GLLCFF_SYSCONF_7000_BASE + 0xB0000);
+	} else if (x == 7115) {
+		return STM_U32_REG(GLLCFF_SYSCONF_7000_BASE + 0xB8000);
+	} else if (x < 7400) {
+		return STM_U32_REG(0);
+	} else if (x == 7437) {
+		return STM_U32_REG(GLLCFF_SYSCONF_7000_BASE + 0x130094);
+	} else if (x == 7438) {
+		return STM_U32_REG(GLLCFF_SYSCONF_7000_BASE + 0x130098);
+	} else if (x == 7444) {
+		return STM_U32_REG(GLLCFF_SYSCONF_7000_BASE + 0x1300B0);
+	} else if (x < 7499) {
+		return STM_U32_REG(GLLCFF_SYSCONF_7400_BASE + (x - 7400) * 0x4);
+	} else if (x < 7499) {
+		return STM_U32_REG(GLLCFF_SYSCONF_7400_BASE + (x - 7400) * 0x4);
+	} else if (x < 7830) {
+		return STM_U32_REG(0);
+	} else if (x < 7848) {
+		return STM_U32_REG(GLLCFF_SYSCONF_7830_BASE + (x - 7830) * 0x4);
+	} else if (x < 7999) {
+		return STM_U32_REG(GLLCFF_SYSCONF_7848_BASE + (x - 7848) * 0x4);
+	} else if (x < 11001) {
+		return STM_U32_REG(0);
+	} else if (x < 11100) {
+		return STM_U32_REG(GLLCFF_SYSCONF_11000_BASE + ((x - 11000)-1) * 0x10000);
+	} else if (x < 11415) {
+		return STM_U32_REG(GLLCFF_SYSCONF_11100_BASE + (x - 11100) * 0x4);
+	} else if (x < 11700) {
+		return STM_U32_REG(GLLCFF_SYSCONF_11415_BASE + (x - 11415) * 0x4);
+	} else if (x < 11799) {
+		return STM_U32_REG(GLLCFF_SYSCONF_11700_BASE + (x - 11700) * 0x4);
+	} else if (x < 13400) {
+		return STM_U32_REG(0);
+	} else if (x < 13799) {
+		return STM_U32_REG(GLLCFF_SYSCONF_13400_BASE + (x - 13400) * 0x4);
+	} else if (x < 13950) {
+		return STM_U32_REG(0);
+	} else if (x < 13999) {
+		return STM_U32_REG(GLLCFF_SYSCONF_13950_BASE + (x - 13950) * 0x4);
+	} else if (x < 20000) {
+		return STM_U32_REG(0);
+	} else if (x < 21000) {
+		return STM_U32_REG(GLLCFF_SYSCONF_20000_BASE + (x - 20000) * 0x4);
+	} else if (x < 23000) {
+		return STM_U32_REG(GLLCFF_SYSCONF_22000_BASE + (x - 22000) * 0x4);
+	} else if (x < 23122) {
+		return STM_U32_REG(GLLCFF_SYSCONF_23000_BASE + (x - 22000) * 0x4);
+	} else if (x < 23500) {
+		return STM_U32_REG(0);
+	} else {
+		return STM_U32_REG(GLLCFF_SYSCONF_23500_BASE + (x - 23500) * 0x4);
+	}
+}
+
+/* GLLCFF System Status "accessors" */
+#define GLLCFF_SYSSTS(x) GLLCFF_SYSCFG(x)
+
+#ifndef CONFIG_STM_FSM_SUPPORTS_32_BIT_ADDRESSES
+#define CONFIG_STM_FSM_SUPPORTS_32_BIT_ADDRESSES
+#endif
+
+/* Device ID register & bitfields */
+#define GLLCFF_SYSCONF_DEVICEID GLLCFF_SYSSTS(1470)
+
+/* Device ID values, masks & predicates */
+#define GLLCFF_DEVID_VAL 0x059 /* Device ID for the GLLCFF */
+#define GLLCFF_DEVID_ID_SHIFT 12
+#define GLLCFF_DEVID_ID_MASK 0x3ff
+#define GLLCFF_DEVID_CUT_SHIFT 28
+#define GLLCFF_DEVID_CUT_MASK 0xf
+
+#define GLLCFF_DEVICEID_GLLCFF(ID)					       \
+	((((ID) >> GLLCFF_DEVID_ID_SHIFT) & GLLCFF_DEVID_ID_MASK)	       \
+	 == GLLCFF_DEVID_VAL)
+#define GLLCFF_DEVICEID_CUT(ID)						       \
+	((((ID) >> GLLCFF_DEVID_CUT_SHIFT) & GLLCFF_DEVID_CUT_MASK) + 1)
+
+/* CSA: SPI Flash,  Physical 0x00000000 (4MiB) */
+#define CONFIG_SYS_EMI_SPI_BASE	 0x00000000
+
+#define SYSCONF(_reg) ((unsigned int *)GLLCFF_SYSCFG(_reg))
+
+#define CONFIG_SYS_CACHELINE_SIZE 64
+
+/* MMC Controller Bases (in the FlashSS) */
+#define TOP_FLASHSS_CONFIG 0x1800
+
+#define TOP_FLASHSS_CONFIG_HAMMING_NOT_BCH (0x1 << 0)
+#define TOP_FLASHSS_CONFIG_CFG_EMMC_NOT_EMI (0x1 << 1)
+#define TOP_FLASHSS_CONFIG_EMMC_BOOT_CLK_DIV_BY_2 (0x1 << 2)
+
+#endif /* __INCLUDE_STM_GLLCFF_REG_H */

@@ -17,6 +17,10 @@
 #include <fdt_support.h>
 #include <mapmem.h>
 #include <asm/io.h>
+#ifdef CONFIG_SPACEX
+#include <stdbool.h>
+#include <spacex/common.h>
+#endif /* CONFIG_SPACEX */
 
 #define MAX_LEVEL	32		/* how deeply nested we will go */
 #define SCRATCHPAD	1024		/* bytes of scratchpad memory */
@@ -129,6 +133,7 @@ static int do_fdt(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		argc -= 2;
 		argv += 2;
 /* Temporary #ifdef - some archs don't have fdt_blob yet */
+#ifndef CONFIG_SPACEX
 #ifdef CONFIG_OF_CONTROL
 		if (argc && !strcmp(*argv, "-c")) {
 			control = 1;
@@ -136,6 +141,14 @@ static int do_fdt(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			argv++;
 		}
 #endif
+#else /* !CONFIG_SPACEX */
+		bool parse = false;
+		if (argc && !strcmp(*argv, "-p")) {
+			parse = true;
+			argc--;
+			argv++;
+		}
+#endif /* CONFIG_SPACEX */
 		if (argc == 0) {
 			if (control)
 				blob = (struct fdt_header *)gd->fdt_blob;
@@ -180,6 +193,11 @@ static int do_fdt(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 				}
 			}
 		}
+
+#ifdef CONFIG_SPACEX
+		if (parse)
+			spacex_init(blob);
+#endif /* CONFIG_SPACEX */
 
 		return CMD_RET_SUCCESS;
 	}
@@ -1107,7 +1125,12 @@ static int fdt_print(const char *pathp, char *prop, int depth)
 /********************************************************************/
 #ifdef CONFIG_SYS_LONGHELP
 static char fdt_help_text[] =
+#ifndef CONFIG_SPACEX
 	"addr [-c]  <addr> [<length>]   - Set the [control] fdt location to <addr>\n"
+#else /* !CONFIG_SPACEX */
+	"addr [-p]  <addr> [<length>]    - Set the fdt location to <addr>, optionally"
+	"                                      [parse] it to perform initializations\n"
+#endif /* CONFIG_SPACEX */
 #ifdef CONFIG_OF_LIBFDT_OVERLAY
 	"fdt apply <addr>                    - Apply overlay to the DT\n"
 #endif

@@ -118,6 +118,8 @@ source "drivers/timer/Kconfig"
 
 source "drivers/tpm/Kconfig"
 
+source "drivers/uboot_fpga_loader/Kconfig"
+
 source "drivers/usb/Kconfig"
 
 source "drivers/ufs/Kconfig"
@@ -131,6 +133,8 @@ source "drivers/w1/Kconfig"
 source "drivers/w1-eeprom/Kconfig"
 
 source "drivers/watchdog/Kconfig"
+
+source "drivers/stm/gllcff/Kconfig"
 
 config PHYS_TO_BUS
 	bool "Custom physical to bus address mapping"

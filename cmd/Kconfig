@@ -1534,6 +1534,11 @@ config CMD_SNTP
 	help
 	  Synchronize RTC via network
 
+config CMD_RDATE
+	bool "rdate"
+	help
+	  Synchronize time via network
+
 config CMD_DNS
 	bool "dns"
 	help
@@ -1757,6 +1762,47 @@ config CMD_UUID
 
 	  The two commands are very similar except for the endianness of the
 	  output.
+
+config CMD_UNECC
+	bool "unecc"
+	help
+	  Decode ECC-encoded volumes.
+
+config CMD_FITS
+	bool "fits"
+	depends on FIT
+	help
+	  Access data (subimages) inside FIT images.
+
+if SPACEX
+config SPACEX_CMD_SXID
+	bool "SpaceX Identification"
+	default n
+	help
+	  This provides access to the SpaceX ID.
+
+config SPACEX_SXID_VALID_SLOTIDS
+	string "Alternate allowed IDs"
+	depends on SPACEX_CMD_SXID
+	help
+	  A comma seperated list of valid values of the slotid entry in SXID.
+	  This allows override of the strapping defined IP address with a
+	  provisioned one.  Note that it is up to each individual board to
+	  restrict the desired IP address.
+
+config SPACEX_SXID_MULTI_DTB
+	bool "DTB configuration from SXID"
+	depends on SPACEX_CMD_SXID
+	default n
+	help
+	  Use SXID to determine proper Linux device tree to boot from FIT.
+
+config CMD_NXID
+	bool "Identification from NXID"
+	default y
+	help
+	  Allows the reading and decoding of the NXID format from various mediums.
+endif
 
 endmenu
 

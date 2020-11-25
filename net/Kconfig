@@ -45,4 +45,21 @@ config TFTP_BLOCKSIZE
 	help
 	  Default TFTP block size.
 
+if SPACEX
+config NET_DO_NOT_TRY_ANOTHER
+	bool "Prevent network interface cycling"
+	default y
+	help
+	  Prevent network inferface cycling. This prevents the primary
+	  network inferface's DMA from being left enabled after U-Boot
+	  completes, as described in ticket PLAT-935.
+endif
+
+config TFTP_TIMEOUT
+	int "TFTP timeout length in ms"
+	default 5000
+	help
+	  Timeout in ms to wait for a TFTP response before initiating a retry
+	  or failure.
+
 endif   # if NET

@@ -112,5 +112,9 @@ int drv_jtag_console_init (void);
 #ifdef CONFIG_CBMEM_CONSOLE
 int cbmemc_init(void);
 #endif
+#ifdef CONFIG_SPACEX_TELEM
+int drv_telem_init(void);
+#endif
+
 
 #endif
