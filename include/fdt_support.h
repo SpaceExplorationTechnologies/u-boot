@@ -287,6 +287,16 @@ u64 fdt_get_base_address(const void *fdt, int node);
 int fdt_read_range(void *fdt, int node, int n, uint64_t *child_addr,
 		   uint64_t *addr, uint64_t *len);
 
+#ifdef CONFIG_SPACEX
+int fdt_add_to_chosen(void *fdt, const char *name, const void *value, int len);
+int fdt_add_env_to_chosen(void *fdt, const char *name, const char *env);
+int fdt_add_env_to_chosen_default(void *fdt, const char *name, const char *env,
+				  const char *default_value);
+int fdt_add_string_to_chosen(void *fdt, const char *name, const char *str);
+int fdt_add_uint32_to_chosen(void *fdt, const char *name, uint32_t val);
+int fdt_add_uint64_to_chosen(void *fdt, const char *name, uint64_t val);
+#endif  /* CONFIG_SPACEX */
+
 enum fdt_status {
 	FDT_STATUS_OKAY,
 	FDT_STATUS_DISABLED,

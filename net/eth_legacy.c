@@ -326,6 +326,14 @@ int eth_init(void)
 
 	old_current = eth_current;
 	do {
+#ifdef CONFIG_SPACEX
+		enum eth_state_t old_state = eth_current->state;
+
+		if (old_state == ETH_STATE_ACTIVE)
+			printf("WARNING:  Attempting to activate already active interface\n");
+
+		eth_current->state = ETH_STATE_ACTIVATING;
+#endif
 		debug("Trying %s\n", eth_current->name);
 
 		if (eth_current->init(eth_current, gd->bd) >= 0) {
@@ -333,9 +341,13 @@ int eth_init(void)
 
 			return 0;
 		}
+#ifdef CONFIG_SPACEX
+		eth_current->state = old_state;
+#endif
 		debug("FAIL\n");
-
+#if !defined(CONFIG_NET_DO_NOT_TRY_ANOTHER)
 		eth_try_another(0);
+#endif
 	} while (old_current != eth_current);
 
 	return -ETIMEDOUT;
@@ -355,6 +367,13 @@ int eth_is_active(struct eth_device *dev)
 {
 	return dev && dev->state == ETH_STATE_ACTIVE;
 }
+
+#ifdef CONFIG_SPACEX
+int eth_is_activating(struct eth_device *dev)
+{
+	return dev && dev->state == ETH_STATE_ACTIVATING;
+}
+#endif
 
 int eth_send(void *packet, int length)
 {

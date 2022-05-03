@@ -4,7 +4,7 @@
 	!defined(CONFIG_ARCH_ROCKCHIP) && !defined(CONFIG_ARCH_ASPEED) && \
 	!defined(CONFIG_ARCH_U8500) && !defined(CONFIG_CORTINA_PLATFORM) && \
 	!defined(CONFIG_TARGET_BCMNS3) && !defined(CONFIG_TARGET_TOTAL_COMPUTE) && \
-	!defined(CONFIG_ARCH_QEMU)
+	!defined(CONFIG_ARCH_QEMU) && !defined(CONFIG_ARCH_GLL)
 #include <asm/arch/gpio.h>
 #endif
 #include <asm-generic/gpio.h>

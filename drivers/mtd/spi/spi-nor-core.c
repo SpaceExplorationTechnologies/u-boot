@@ -27,6 +27,10 @@
 #include <spi-mem.h>
 #include <spi.h>
 
+#ifdef CONFIG_SPACEX
+#include <linux/delay.h>
+#endif
+
 #include "sf_internal.h"
 
 /* Define max times to check status register before we give up. */
@@ -543,6 +547,45 @@ static int spi_nor_erase_sector(struct spi_nor *nor, u32 addr)
 	return spi_mem_exec_op(nor->spi, &op);
 }
 
+#ifdef CONFIG_SPACEX
+
+static int spacex_double_size_if_striped(struct spi_nor *nor,
+					  u32 orig_size,
+					  u32 *result_ptr)
+{
+	u32 result = orig_size;
+
+	if (nor->shift && (orig_size > (UINT_MAX >> 1))) {
+		dev_err(nor->dev, "SF: size 0x%x Will overflow if doubled.\n",
+			orig_size);
+		return -EINVAL;
+	}
+	if (nor->shift)
+		result <<= 1;
+
+	*result_ptr = result;
+	return 0;
+}
+
+static int spacex_halve_addr_if_striped(struct spi_nor *nor,
+					 u32 orig_addr,
+					 u32 *result_ptr)
+{
+	u32 result = orig_addr;
+
+	if (nor->shift && (orig_addr & 1)) {
+		dev_err(nor->dev, "SF: offset 0x%x is not two-byte aligned.\n", orig_addr);
+		return -EINVAL;
+	}
+	if (nor->shift)
+		result >>= 1;
+
+	*result_ptr = result;
+	return 0;
+}
+
+#endif /* CONFIG_SPACEX */
+
 /*
  * Erase an address range on the nor chip.  The address range may extend
  * one or more erase sectors.  Return an error is there is a problem erasing.
@@ -550,7 +593,11 @@ static int spi_nor_erase_sector(struct spi_nor *nor, u32 addr)
 static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
 	struct spi_nor *nor = mtd_to_spi_nor(mtd);
+#ifndef CONFIG_SPACEX
 	u32 addr, len, rem;
+#else /* !CONFIG_SPACEX */
+	u32 raw_addr, len, rem;
+#endif /* CONFIG_SPACEX */
 	int ret;
 
 	dev_dbg(nor->dev, "at 0x%llx, len %lld\n", (long long)instr->addr,
@@ -563,23 +610,36 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 	if (rem)
 		return -EINVAL;
 
+#ifndef CONFIG_SPACEX
 	addr = instr->addr;
+#else /* !CONFIG_SPACEX */
+	raw_addr = instr->addr;
+#endif /* CONFIG_SPACEX */
 	len = instr->len;
 
 	while (len) {
 		WATCHDOG_RESET();
+#ifdef CONFIG_SPACEX
+		u32 addr;
+		ret = spacex_halve_addr_if_striped(nor, raw_addr, &addr);
+		if (ret < 0)
+			return ret;
+#endif /* CONFIG_SPACEX */
 #ifdef CONFIG_SPI_FLASH_BAR
 		ret = write_bar(nor, addr);
 		if (ret < 0)
 			return ret;
 #endif
 		write_enable(nor);
-
 		ret = spi_nor_erase_sector(nor, addr);
 		if (ret)
 			goto erase_err;
 
+#ifndef CONFIG_SPACEX
 		addr += mtd->erasesize;
+#else /* !CONFIG_SPACEX */
+		raw_addr += mtd->erasesize;
+#endif /* CONFIG_SPACEX */
 		len -= mtd->erasesize;
 
 		ret = spi_nor_wait_till_ready(nor);
@@ -914,21 +974,39 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 {
 	struct spi_nor *nor = mtd_to_spi_nor(mtd);
 	int ret;
+#ifdef CONFIG_SPACEX
+	u32 bank_size = SZ_16M;
+	ret = spacex_double_size_if_striped(nor,
+						SZ_16M,
+						&bank_size);
+	if (ret < 0)
+		return ret;
+#endif /* CONFIG_SPACEX */
 
 	dev_dbg(nor->dev, "from 0x%08x, len %zd\n", (u32)from, len);
 
 	while (len) {
 		loff_t addr = from;
 		size_t read_len = len;
-
 #ifdef CONFIG_SPI_FLASH_BAR
 		u32 remain_len;
-
+#endif
+#ifdef CONFIG_SPACEX
+		u32 temp_addr;
+		ret = spacex_halve_addr_if_striped(nor, addr, &temp_addr);
+		if (ret < 0)
+			return ret;
+		addr = temp_addr;
+#endif /* CONFIG_SPACEX */
+#ifdef CONFIG_SPI_FLASH_BAR
 		ret = write_bar(nor, addr);
 		if (ret < 0)
 			return log_ret(ret);
+#ifndef CONFIG_SPACEX
 		remain_len = (SZ_16M * (nor->bank_curr + 1)) - addr;
-
+#else /* !CONFIG_SPACEX */
+		remain_len = (bank_size * (nor->bank_curr + 1)) - from;
+#endif /* CONFIG_SPACEX */
 		if (len < remain_len)
 			read_len = len;
 		else
@@ -1269,6 +1347,14 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
 		/* the size of data remaining on the first page */
 		page_remain = min_t(size_t,
 				    nor->page_size - page_offset, len - i);
+
+#ifdef CONFIG_SPACEX
+		u32 temp_addr;
+		ret = spacex_halve_addr_if_striped(nor, addr, &temp_addr);
+		if (ret < 0)
+			return ret;
+		addr = temp_addr;
+#endif /* CONFIG_SPACEX */
 
 #ifdef CONFIG_SPI_FLASH_BAR
 		ret = write_bar(nor, addr);
@@ -2438,6 +2524,62 @@ static int spi_nor_setup(struct spi_nor *nor, const struct flash_info *info,
 	return 0;
 }
 
+#ifdef CONFIG_SPACEX
+static void spacex_spi_nor_scan_configure(struct spi_nor *nor,
+				 const struct flash_info *info)
+{
+#ifdef CONFIG_SPACEX_SPI_FLASH_STMICRO_SOFT_RESET
+	int err;
+
+	/*
+	 * For STMicro/Micron parts only, reset the part entirely prior
+	 * to issuing any further commands. Without this, persistant
+	 * state carried across warm boots can interfere with u-boot
+	 * flash operation. Wait times are taken from the MT25QL02GC
+	 * specification.
+	 */
+#define SPINOR_OP_RESET_ENABLE 0x66
+#define SPINOR_OP_RESET_MEMORY 0x99
+	if (JEDEC_MFR(info) == SNOR_MFR_MICRON ||
+		JEDEC_MFR(info) == SNOR_MFR_ST) {
+		err = nor->write_reg(nor, SPINOR_OP_RESET_ENABLE, NULL, 0);
+		if (err) {
+			printf("SF: Failed to enable flash reset.\n");
+		}
+
+		/* Wait a minimum of 50ns (SHSL2). */
+		udelay(1);
+
+		err = nor->write_reg(nor, SPINOR_OP_RESET_MEMORY, NULL, 0);
+		if (err) {
+			printf("SF: Failed to reset flash memory.\n");
+		}
+
+		/* Wait a minimum of 40ns (SHSL3). */
+		udelay(1);
+	}
+#endif /* CONFIG_SPACEX_SPI_FLASH_STMICRO_SOFT_RESET */
+
+#ifdef CONFIG_SPI_FLASH_STMICRO
+	/*
+	 * For STMicro/Micron parts only, make sure to exit 4-byte addressing.
+	 * u-boot does not support 4-byte addresses, but Linux does so warm
+	 * boots can fail if the part is not reset.
+	 */
+	set_4byte(nor, info, 0);
+#endif /* CONFIG_SPI_FLASH_STMICRO */
+
+	nor->shift = false;
+#ifdef CONFIG_SF_DUAL_FLASH
+	/*
+	 * Make the decision whether to double sizes and halve addresses.
+	 * Do this if we're using striped (parallel) dual flash chips.
+	 */
+	nor->shift = (nor->spi->option == SF_DUAL_PARALLEL_FLASH) ? true : false;
+#endif /* CONFIG_SF_DUAL_FLASH */
+}
+#endif /* CONFIG_SPACEX */
+
 static int spi_nor_init(struct spi_nor *nor)
 {
 	int err;
@@ -2450,6 +2592,9 @@ static int spi_nor_init(struct spi_nor *nor)
 	    (JEDEC_MFR(nor->info) == SNOR_MFR_ATMEL ||
 	     JEDEC_MFR(nor->info) == SNOR_MFR_INTEL ||
 	     JEDEC_MFR(nor->info) == SNOR_MFR_SST ||
+#ifdef CONFIG_SPACEX
+	     JEDEC_MFR(nor->info) == SNOR_MFR_ST ||
+#endif
 	     nor->info->flags & SPI_NOR_HAS_LOCK)) {
 		write_enable(nor);
 		write_sr(nor, 0);
@@ -2528,10 +2673,27 @@ int spi_nor_scan(struct spi_nor *nor)
 	info = spi_nor_read_id(nor);
 	if (IS_ERR_OR_NULL(info))
 		return -ENOENT;
+
+#ifdef CONFIG_SPACEX
+	spacex_spi_nor_scan_configure(nor, info);
+#endif /* CONFIG_SPACEX */
+
 	/* Parse the Serial Flash Discoverable Parameters table. */
 	ret = spi_nor_init_params(nor, info, &params);
 	if (ret)
 		return ret;
+#ifdef CONFIG_SPACEX
+	u32 doubled_size;
+	ret = spacex_double_size_if_striped(nor, params.size, &doubled_size);
+	if (ret)
+		return ret;
+	params.size = doubled_size;
+	ret = spacex_double_size_if_striped(nor,
+					    params.page_size,
+					    &params.page_size);
+	if (ret)
+		return ret;
+#endif /* CONFIG_SPACEX */
 
 	if (!mtd->name)
 		mtd->name = info->name;
@@ -2619,6 +2781,13 @@ int spi_nor_scan(struct spi_nor *nor)
 	} else {
 		nor->addr_width = 3;
 	}
+#ifdef CONFIG_SPACEX
+	ret = spacex_double_size_if_striped(nor,
+					    mtd->erasesize,
+					    &mtd->erasesize);
+	if (ret < 0)
+		return ret;
+#endif /* CONFIG_SPACEX */
 
 	if (nor->addr_width > SPI_NOR_MAX_ADDR_WIDTH) {
 		dev_dbg(nor->dev, "address width is too large: %u\n",

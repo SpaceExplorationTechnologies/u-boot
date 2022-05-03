@@ -1715,6 +1715,13 @@ config ARCH_STM32MP
 	  chain.
 	  SPL is the unsecure FSBL for the basic boot chain.
 
+config ARCH_GLL
+	bool "Support STMicrolectronics SoCs"
+	select ARM64
+	select OF_CONTROL
+	help
+	  Support for STMicroelectronics gllcff.
+
 config ARCH_ROCKCHIP
 	bool "Support Rockchip SoCs"
 	select BLK
@@ -1855,6 +1862,8 @@ source "arch/arm/mach-bcmstb/Kconfig"
 source "arch/arm/mach-davinci/Kconfig"
 
 source "arch/arm/mach-exynos/Kconfig"
+
+source "arch/arm/mach-gll/Kconfig"
 
 source "arch/arm/mach-highbank/Kconfig"
 

@@ -128,6 +128,7 @@ serial_initfunc(pl01x_serial_initialize);
 serial_initfunc(pxa_serial_initialize);
 serial_initfunc(sh_serial_initialize);
 serial_initfunc(mtk_serial_initialize);
+serial_initfunc(stm_asc_serial_initialize);
 
 /**
  * serial_register() - Register serial driver with serial driver core

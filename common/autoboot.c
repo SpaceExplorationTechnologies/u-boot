@@ -205,6 +205,13 @@ static int passwd_abort_key(uint64_t etime)
 
 				presskey[i] = getchar();
 			}
+#ifdef CONFIG_SPACEX
+			/* On every stroke, extend the timeout by a
+			 * second. Only do this for the first few
+			 * keystrokes. */
+			if (presskey_len <= min(3, presskey_max - 1))
+				etime += get_tbclk();
+#endif /* CONFIG_SPACEX */
 		}
 
 		for (i = 0; i < sizeof(delaykey) / sizeof(delaykey[0]); i++) {
@@ -242,7 +249,11 @@ static int abortboot_key_sequence(int bootdelay)
 	 * CONFIG_AUTOBOOT_PROMPT includes the %d for all boards.
 	 * To print the bootdelay value upon bootup.
 	 */
+#ifndef CONFIG_SPACEX
 	printf(CONFIG_AUTOBOOT_PROMPT, bootdelay);
+#else
+	printf(CONFIG_AUTOBOOT_PROMPT);
+#endif /* CONFIG_SPACEX */
 #  endif
 
 	if (IS_ENABLED(CONFIG_AUTOBOOT_ENCRYPTION))
@@ -387,6 +398,10 @@ void autoboot_command(const char *s)
 		if (lock)
 			disable_ctrlc(prev);	/* restore Ctrl-C checking */
 	}
+
+#ifdef CONFIG_SPACEX
+	printf(SPACEX_AUTOBOOT_MOTD);
+#endif /* CONFIG_SPACEX */
 
 	if (IS_ENABLED(CONFIG_USE_AUTOBOOT_MENUKEY) &&
 	    menukey == AUTOBOOT_MENUKEY) {

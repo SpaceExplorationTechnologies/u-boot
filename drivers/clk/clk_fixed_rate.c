@@ -14,6 +14,23 @@ static ulong clk_fixed_rate_get_rate(struct clk *clk)
 	return to_clk_fixed_rate(clk->dev)->fixed_rate;
 }
 
+#ifdef CONFIG_SPACEX
+#include <dm/device_compat.h>
+static ulong clk_fixed_rate_set_rate(struct clk *clk, unsigned long rate)
+{
+	ulong current_rate = clk_fixed_rate_get_rate(clk);
+
+	if (current_rate != rate) {
+		dev_err(clk->dev,
+			"Unable to adjust fixed clock with frequency %ld to %ld\n",
+			current_rate, rate);
+		return -ENOTSUPP;
+	}
+
+	return 0;
+}
+#endif
+
 /* avoid clk_enable() return -ENOSYS */
 static int dummy_enable(struct clk *clk)
 {
@@ -22,6 +39,9 @@ static int dummy_enable(struct clk *clk)
 
 const struct clk_ops clk_fixed_rate_ops = {
 	.get_rate = clk_fixed_rate_get_rate,
+#ifdef CONFIG_SPACEX
+	.set_rate = clk_fixed_rate_set_rate,
+#endif
 	.enable = dummy_enable,
 };
 

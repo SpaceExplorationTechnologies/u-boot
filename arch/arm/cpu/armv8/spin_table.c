@@ -8,6 +8,10 @@
 #include <linux/libfdt.h>
 #include <asm/spin_table.h>
 
+#ifdef CONFIG_SPACEX
+DECLARE_GLOBAL_DATA_PTR;
+#endif /* CONFIG_SPACEX */
+
 int spin_table_update_dt(void *fdt)
 {
 	int cpus_offset, offset;
@@ -16,6 +20,16 @@ int spin_table_update_dt(void *fdt)
 	unsigned long rsv_addr = (unsigned long)&spin_table_reserve_begin;
 	unsigned long rsv_size = &spin_table_reserve_end -
 						&spin_table_reserve_begin;
+#ifdef CONFIG_SPACEX
+	unsigned long release_addr =
+		(unsigned long)&spin_table_cpu_release_addr;
+
+	/* Don't forget to apply relocation if needed. */
+	if (gd->flags & GD_FLG_RELOC) {
+		rsv_addr -= gd->reloc_off;
+		release_addr -= gd->reloc_off;
+	}
+#endif /* CONFIG_SPACEX */
 
 	cpus_offset = fdt_path_offset(fdt, "/cpus");
 	if (cpus_offset < 0)
@@ -46,7 +60,11 @@ int spin_table_update_dt(void *fdt)
 			continue;
 
 		ret = fdt_setprop_u64(fdt, offset, "cpu-release-addr",
+#ifndef CONFIG_SPACEX
 				(unsigned long)&spin_table_cpu_release_addr);
+#else /* !CONFIG_SPACEX */
+				release_addr);
+#endif /* CONFIG_SPACEX */
 		if (ret)
 			return -ENOSPC;
 	}

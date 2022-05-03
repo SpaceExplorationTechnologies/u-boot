@@ -13,6 +13,14 @@
 #include <linux/types.h>
 #include <linux/compiler.h>
 
+#ifdef CONFIG_SPACEX
+/* Dual SPI flash memories. */
+enum spi_dual_flash {
+	SF_SINGLE_FLASH	= 0,
+	SF_DUAL_PARALLEL_FLASH	= BIT(0),
+};
+
+#endif /* CONFIG_SPACEX */
 #define SPI_NOR_MAX_ID_LEN	6
 #define SPI_NOR_MAX_ADDR_WIDTH	4
 

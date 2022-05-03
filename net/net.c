@@ -77,6 +77,12 @@
  *
  *	Prerequisites:	- own ethernet address
  *	We want:	- magic packet or timeout
+ *
+ * RDATE:
+ *
+ *	Prerequisites:	- own ethernet address
+ *			- own IP address
+ *	We want:	- network time
  *	Next step:	none
  */
 
@@ -115,6 +121,9 @@
 #include "rarp.h"
 #if defined(CONFIG_CMD_WOL)
 #include "wol.h"
+#endif
+#if defined(CONFIG_CMD_RDATE)
+#include <rdate.h>
 #endif
 
 /** BOOTP EXTENTIONS **/
@@ -176,6 +185,11 @@ u32 net_boot_file_size;
 /* Boot file size in blocks as reported by the DHCP server */
 u32 net_boot_file_expected_size_in_blocks;
 
+#if defined(CONFIG_CMD_RDATE)
+/* RDATE server IP address */
+struct in_addr	net_rdate_server;
+#endif
+
 static uchar net_pkt_buf[(PKTBUFSRX+1) * PKTSIZE_ALIGN + PKTALIGN];
 /* Receive packets */
 uchar *net_rx_packets[PKTBUFSRX];
@@ -207,8 +221,10 @@ int __maybe_unused net_busy_flag;
 static int on_ipaddr(const char *name, const char *value, enum env_op op,
 	int flags)
 {
+#ifndef CONFIG_SPACEX
 	if (flags & H_PROGRAMMATIC)
 		return 0;
+#endif
 
 	net_ip = string_to_ip(value);
 
@@ -219,8 +235,10 @@ U_BOOT_ENV_CALLBACK(ipaddr, on_ipaddr);
 static int on_gatewayip(const char *name, const char *value, enum env_op op,
 	int flags)
 {
+#ifndef CONFIG_SPACEX
 	if (flags & H_PROGRAMMATIC)
 		return 0;
+#endif
 
 	net_gateway = string_to_ip(value);
 
@@ -231,8 +249,10 @@ U_BOOT_ENV_CALLBACK(gatewayip, on_gatewayip);
 static int on_netmask(const char *name, const char *value, enum env_op op,
 	int flags)
 {
+#ifndef CONFIG_SPACEX
 	if (flags & H_PROGRAMMATIC)
 		return 0;
+#endif
 
 	net_netmask = string_to_ip(value);
 
@@ -243,8 +263,10 @@ U_BOOT_ENV_CALLBACK(netmask, on_netmask);
 static int on_serverip(const char *name, const char *value, enum env_op op,
 	int flags)
 {
+#ifndef CONFIG_SPACEX
 	if (flags & H_PROGRAMMATIC)
 		return 0;
+#endif
 
 	net_server_ip = string_to_ip(value);
 
@@ -255,8 +277,10 @@ U_BOOT_ENV_CALLBACK(serverip, on_serverip);
 static int on_nvlan(const char *name, const char *value, enum env_op op,
 	int flags)
 {
+#ifndef CONFIG_SPACEX
 	if (flags & H_PROGRAMMATIC)
 		return 0;
+#endif
 
 	net_native_vlan = string_to_vlan(value);
 
@@ -267,8 +291,10 @@ U_BOOT_ENV_CALLBACK(nvlan, on_nvlan);
 static int on_vlan(const char *name, const char *value, enum env_op op,
 	int flags)
 {
+#ifndef CONFIG_SPACEX
 	if (flags & H_PROGRAMMATIC)
 		return 0;
+#endif
 
 	net_our_vlan = string_to_vlan(value);
 
@@ -280,8 +306,10 @@ U_BOOT_ENV_CALLBACK(vlan, on_vlan);
 static int on_dnsip(const char *name, const char *value, enum env_op op,
 	int flags)
 {
+#ifndef CONFIG_SPACEX
 	if (flags & H_PROGRAMMATIC)
 		return 0;
+#endif
 
 	net_dns_server = string_to_ip(value);
 
@@ -525,6 +553,10 @@ restart:
 #if defined(CONFIG_CMD_WOL)
 		case WOL:
 			wol_start();
+#endif
+#if defined(CONFIG_CMD_RDATE)
+		case RDATE:
+			rdate_start();
 			break;
 #endif
 		default:
@@ -809,6 +841,18 @@ uchar *net_get_async_tx_pkt_buf(void)
 		return net_tx_packet;
 }
 
+#ifdef CONFIG_SPACEX
+int __net_send_udp_packet(uchar *ether, struct in_addr dest, int dport, int sport,
+		int payload_len, uchar ttl)
+{
+	return net_send_ip_packet(ether, dest, dport, sport, payload_len,
+				  IPPROTO_UDP, 0, 0, 0, ttl);
+}
+
+int net_send_ip_packet(uchar *ether, struct in_addr dest, int dport, int sport,
+		       int payload_len, int proto, u8 action, u32 tcp_seq_num,
+		       u32 tcp_ack_num, uchar ttl)
+#else
 int net_send_udp_packet(uchar *ether, struct in_addr dest, int dport, int sport,
 		int payload_len)
 {
@@ -819,6 +863,7 @@ int net_send_udp_packet(uchar *ether, struct in_addr dest, int dport, int sport,
 int net_send_ip_packet(uchar *ether, struct in_addr dest, int dport, int sport,
 		       int payload_len, int proto, u8 action, u32 tcp_seq_num,
 		       u32 tcp_ack_num)
+#endif
 {
 	uchar *pkt;
 	int eth_hdr_size;
@@ -837,14 +882,56 @@ int net_send_ip_packet(uchar *ether, struct in_addr dest, int dport, int sport,
 	if (dest.s_addr == 0xFFFFFFFF)
 		ether = (uchar *)net_bcast_ethaddr;
 
+#ifdef CONFIG_SPACEX
+	/*
+	 * If the destination is multicast, we must calculate the
+	 * corresponding ether address as defined in RFC 1112.
+	 */
+	if ((0xF0000000 & ntohl(dest.s_addr)) == 0xE0000000) {
+		/*
+		 * RFC 1112, 6.4:
+		 *   An IP host group address is mapped to an Ethernet
+		 *   multicast address by placing the low-order
+		 *   23-bits of the IP address into the low-order 23
+		 *   bits of the Ethernet multicast address
+		 *   01-00-5E-00-00-00 (hex).  Because there are 28
+		 *   significant bits in an IP host group address,
+		 *   more than one host group address may map to the
+		 *   same Ethernet multicast address.
+		 */
+		ether[0] = 0x01;
+		ether[1] = 0x00;
+		ether[2] = 0x5e;
+		ether[3] = (ntohl(dest.s_addr) & 0x7f0000) >> 16;
+		ether[4] = (ntohl(dest.s_addr) & 0xff00) >> 8;
+		ether[5] = (ntohl(dest.s_addr) & 0xff);
+
+		/*
+		 * RFC 1112, 6.1:
+		 *   If the upper-layer protocol chooses not to
+		 *   specify a time-to-live, it should default to 1
+		 *   for all multicast IP datagrams, so that an
+		 *   explicit choice is required to multicast beyond a
+		 *   single network.
+		 */
+		if (!ttl)
+			ttl = 1;
+	}
+#endif /* CONFIG_SPACEX */
+
 	pkt = (uchar *)net_tx_packet;
 
 	eth_hdr_size = net_set_ether(pkt, ether, PROT_IP);
 
 	switch (proto) {
 	case IPPROTO_UDP:
+#ifndef CONFIG_SPACEX
 		net_set_udp_header(pkt + eth_hdr_size, dest, dport, sport,
 				   payload_len);
+#else
+		net_set_udp_header(pkt + eth_hdr_size, dest, dport, sport,
+				   payload_len, ttl);
+#endif
 		pkt_hdr_size = eth_hdr_size + IP_UDP_HDR_SIZE;
 		break;
 	default:
@@ -874,6 +961,19 @@ int net_send_ip_packet(uchar *ether, struct in_addr dest, int dport, int sport,
 		return 0;	/* transmitted */
 	}
 }
+
+#ifdef CONFIG_SPACEX
+int net_send_udp_packet(uchar *ether, struct in_addr dest, int dport, int sport,
+		int payload_len)
+{
+	return __net_send_udp_packet(ether, dest, dport, sport, payload_len, 0);
+}
+int net_send_udp_packet_ttl(uchar *ether, struct in_addr dest, int dport, int sport,
+		int payload_len, uchar ttl)
+{
+	return __net_send_udp_packet(ether, dest, dport, sport, payload_len, ttl);
+}
+#endif
 
 #ifdef CONFIG_IP_DEFRAG
 /*
@@ -1287,7 +1387,16 @@ void net_process_received_packet(uchar *in_packet, int len)
 				sumlen -= 2;
 			}
 			if (sumlen > 0)
+#ifdef CONFIG_SPACEX
+				/*
+				 * The original code is incorrect: if there are an odd number
+				 * of bytes, pad the message to an even number of bytes by
+				 * adding a 0 byte.
+				 */
+				xsum += (sumptr[0] << 8);
+#else
 				xsum += (sumptr[0] << 8) + sumptr[0];
+#endif
 			while ((xsum >> 16) != 0) {
 				xsum = (xsum & 0x0000ffff) +
 				       ((xsum >> 16) & 0x0000ffff);
@@ -1353,6 +1462,14 @@ static int net_check_prereq(enum proto_t protocol)
 		goto common;
 #endif
 
+#if defined(CONFIG_CMD_RDATE)
+	case RDATE:
+		if (net_rdate_server.s_addr == 0) {
+			puts("*** ERROR: RDATE server address not given\n");
+			return 1;
+		}
+		goto common;
+#endif
 #if defined(CONFIG_CMD_NFS)
 	case NFS:
 #endif
@@ -1364,7 +1481,8 @@ static int net_check_prereq(enum proto_t protocol)
 			return 1;
 		}
 #if	defined(CONFIG_CMD_PING) || \
-	defined(CONFIG_CMD_DNS) || defined(CONFIG_PROT_UDP)
+	defined(CONFIG_CMD_DNS) || defined(CONFIG_PROT_UDP) || \
+	defined(CONFIG_CMD_RDATE)
 common:
 #endif
 		/* Fall through */
@@ -1473,8 +1591,13 @@ int net_update_ether(struct ethernet_hdr *et, uchar *addr, uint prot)
 	}
 }
 
+#ifndef CONFIG_SPACEX
 void net_set_ip_header(uchar *pkt, struct in_addr dest, struct in_addr source,
 		       u16 pkt_len, u8 proto)
+#else
+void net_set_ip_header(uchar *pkt, struct in_addr dest, struct in_addr source,
+		       u16 pkt_len, u8 proto, uchar ttl)
+#endif /* CONFIG_SPACEX */
 {
 	struct ip_udp_hdr *ip = (struct ip_udp_hdr *)pkt;
 
@@ -1488,7 +1611,14 @@ void net_set_ip_header(uchar *pkt, struct in_addr dest, struct in_addr source,
 	ip->ip_p     = proto;
 	ip->ip_id    = htons(net_ip_id++);
 	ip->ip_off   = htons(IP_FLAGS_DFRAG);	/* Don't fragment */
+#ifndef CONFIG_SPACEX
 	ip->ip_ttl   = 255;
+#else
+	if (ttl)
+		ip->ip_ttl = ttl;
+	else
+		ip->ip_ttl = 255;
+#endif /* CONFIG_SPACEX */
 	ip->ip_sum   = 0;
 	/* already in network byte order */
 	net_copy_ip((void *)&ip->ip_src, &source);
@@ -1498,8 +1628,13 @@ void net_set_ip_header(uchar *pkt, struct in_addr dest, struct in_addr source,
 	ip->ip_sum   = compute_ip_checksum(ip, IP_HDR_SIZE);
 }
 
+#ifndef CONFIG_SPACEX
 void net_set_udp_header(uchar *pkt, struct in_addr dest, int dport, int sport,
 			int len)
+#else
+void net_set_udp_header(uchar *pkt, struct in_addr dest, int dport, int sport,
+			int len, uchar ttl)
+#endif /* CONFIG_SPACEX */
 {
 	struct ip_udp_hdr *ip = (struct ip_udp_hdr *)pkt;
 
@@ -1511,8 +1646,13 @@ void net_set_udp_header(uchar *pkt, struct in_addr dest, int dport, int sport,
 	if (len & 1)
 		pkt[IP_UDP_HDR_SIZE + len] = 0;
 
+#ifndef CONFIG_SPACEX
 	net_set_ip_header(pkt, dest, net_ip, IP_UDP_HDR_SIZE + len,
 			  IPPROTO_UDP);
+#else
+	net_set_ip_header(pkt, dest, net_ip, IP_UDP_HDR_SIZE + len,
+			  IPPROTO_UDP, ttl);
+#endif /* CONFIG_SPACEX */
 
 	ip->udp_src  = htons(sport);
 	ip->udp_dst  = htons(dport);

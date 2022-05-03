@@ -106,5 +106,8 @@ int drv_usbtty_init(void);
 int drv_nc_init(void);
 int drv_jtag_console_init(void);
 int cbmemc_init(void);
+#ifdef CONFIG_SPACEX_TELEM
+int drv_telem_init(void);
+#endif
 
 #endif

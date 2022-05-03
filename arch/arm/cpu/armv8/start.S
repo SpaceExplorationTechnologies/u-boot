@@ -174,7 +174,7 @@ pie_fixup_done:
 	branch_if_master x0, x1, master_cpu
 	b	spin_table_secondary_jump
 	/* never return */
-#elif defined(CONFIG_ARMV8_MULTIENTRY)
+#elif CONFIG_IS_ENABLED(CONFIG_ARMV8_MULTIENTRY)
 	branch_if_master x0, x1, master_cpu
 
 	/*
@@ -332,7 +332,14 @@ WEAK(lowlevel_init)
 #endif
 #endif
 
-#ifdef CONFIG_ARMV8_MULTIENTRY
+#ifdef CONFIG_SPACEX_NO_ATF_NO_PMUFW
+	/* Enable access to all L2xCTLR and CPUxCTLR registers from EL1. */
+	mov	x0, #0x73
+	msr	actlr_el3, x0
+	msr	actlr_el2, x0
+#endif /* CONFIG_SPACEX_NO_ATF_NO_PMUFW */
+
+#if CONFIG_IS_ENABLED(CONFIG_ARMV8_MULTIENTRY)
 	branch_if_master x0, x1, 2f
 
 	/*
@@ -346,6 +353,18 @@ WEAK(lowlevel_init)
 #endif
 	bl	gic_wait_for_interrupt
 #endif
+#endif /* !CONFIG_ARMV8_MULTIENTRY */
+
+#if !CONFIG_IS_ENABLED(CONFIG_ARMV8_MULTIENTRY) || defined(CONFIG_SPACEX_NO_ATF_NO_PMUFW)
+	branch_if_master x0, x1, 2f
+
+	/*
+	 * Linux does not support a CPU going in from EL3 (see
+	 * el2_setup() in their code base, they check for EL != EL2,
+	 * hence identifying EL3 as EL1...). If we don't use ATF
+	 * (like on the FFC), we must downgrade to EL2 or EL1 before
+	 * reaching the spintable.
+	 */
 
 	/*
 	 * All slaves will enter EL2 and optionally EL1.

@@ -375,8 +375,10 @@ int eth_env_set_enetaddr(const char *name, const uint8_t *enetaddr)
 {
 	char buf[ARP_HLEN_ASCII + 1];
 
+#ifndef CONFIG_SPACEX
 	if (eth_env_get_enetaddr(name, (uint8_t *)buf))
 		return -EEXIST;
+#endif /* !CONFIG_SPACEX */
 
 	sprintf(buf, "%pM", enetaddr);
 
@@ -711,6 +713,7 @@ char *from_env(const char *envvar)
  */
 int env_get_f(const char *name, char *buf, unsigned len)
 {
+#ifndef CONFIG_SPACEX
 	int i, nxt, c;
 
 	for (i = 0; env_get_char(i) != '\0'; i = nxt + 1) {
@@ -745,6 +748,7 @@ int env_get_f(const char *name, char *buf, unsigned len)
 
 		return n;
 	}
+#endif /* !CONFIG_SPACEX */
 
 	return -1;
 }

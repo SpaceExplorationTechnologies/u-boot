@@ -100,6 +100,7 @@ obj-y += rtc/
 obj-y += scsi/
 obj-y += sound/
 obj-y += spmi/
+obj-$(CONFIG_UBOOT_FPGA_LOADER) += uboot_fpga_loader/
 obj-y += video/
 obj-y += watchdog/
 obj-$(CONFIG_QE) += qe/

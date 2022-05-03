@@ -1,0 +1,71 @@
+if ARCH_GLL
+
+config SYS_SOC
+	default "gllcff"
+
+config STM_GLLCFF
+	bool
+	default y
+
+config STM_ASC_SERIAL
+	bool "ST Serial driver"
+
+config STM_FSM_SPI_FLASH
+	bool "ST FSM SPI Flash selected"
+
+config STM_SDHCI
+    bool "ST SDHCI Driver"
+
+config STM_SDHCI_0
+    bool "ST SDHCI0 Driver"
+    depends on STM_SDHCI
+
+config STM_SDHCI_1
+    bool "ST SDHCI1 Driver"
+    default n
+    depends on STM_SDHCI
+
+choice
+    prompt "STMicroelectronics board select"
+
+config TARGET_SPACEX_CATSON_UTERM
+    bool "SpaceX Catson User Terminal"
+    select ARM64
+    select STM_GLLCFF
+    select SPACEX
+    select SPACEX_DEFAULT_ENV_INLINE_IN_BINARY
+
+endchoice
+
+choice
+       prompt "Select Boot Device"
+
+config CATSON_SPI_BOOT
+       bool
+       select CATSON_NOR_ENABLED
+       prompt "Boot Using SPI Nor Flash"
+
+config CATSON_EMMC_BOOT
+        bool
+        select CATSON_EMMC_ENABLED
+        prompt "Boot Using eMMC"
+
+endchoice
+
+config CATSON_NOR_ENABLED
+        bool
+        default n
+        prompt "Enable SPI NOR on Catson"
+        help
+          Enables the STM SPI NOR controller for Catson
+
+config CATSON_EMMC_ENABLED
+        bool
+        default n
+        prompt "Enable eMMC on Catson"
+        help
+          Enables the STM eMMC controller for Catson
+
+source "board/spacex/spacex_catson_uterm/Kconfig"
+
+endif

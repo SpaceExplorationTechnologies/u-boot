@@ -52,4 +52,11 @@ config RNG_IPROC200
 	default n
 	help
 	  Enable random number generator for RPI4.
+
+config RNG_SX
+	bool "SpaceX random number generator"
+	depends on DM_RNG
+	default n
+	help
+	  Enable random number generator for zynqmp.
 endif

@@ -34,7 +34,7 @@ else ifeq ("riscv32", $(MK_ARCH))
 else ifeq ("riscv64", $(MK_ARCH))
   export HOST_ARCH=$(HOST_ARCH_RISCV64)
 endif
-undefine MK_ARCH
+unexport MK_ARCH
 
 # Avoid funny character set dependencies
 unexport LC_ALL
@@ -413,7 +413,7 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 
 KBUILD_CPPFLAGS := -D__KERNEL__ -D__UBOOT__
 
-KBUILD_CFLAGS   := -Wall -Wstrict-prototypes \
+KBUILD_CFLAGS   := -Wall -Werror -Wstrict-prototypes \
 		   -Wno-format-security \
 		   -fno-builtin -ffreestanding $(CSTD_FLAG)
 KBUILD_CFLAGS	+= -fshort-wchar -fno-strict-aliasing
@@ -444,7 +444,11 @@ KBUILD_AFLAGS	+= $(call cc-option,-fno-PIE)
 UBOOTRELEASE = $(shell cat include/config/uboot.release 2> /dev/null)
 UBOOTVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))$(EXTRAVERSION)
 
+SPACEX_COMMIT=$(shell git rev-parse HEAD)$(shell git update-index --refresh && git diff-index --quiet HEAD || echo -dirty)
+SPACEX_BRANCH=$(shell git ls-remote --get-url || echo local) $(shell git rev-parse --abbrev-ref HEAD)
+
 export VERSION PATCHLEVEL SUBLEVEL UBOOTRELEASE UBOOTVERSION
+export SPACEX_COMMIT SPACEX_BRANCH SPACEX_BUILD
 export ARCH CPU BOARD VENDOR SOC CPUDIR BOARDDIR
 export CONFIG_SHELL HOSTCC KBUILD_HOSTCFLAGS CROSS_COMPILE AS LD CC
 export CPP AR NM LDR STRIP OBJCOPY OBJDUMP KBUILD_HOSTLDFLAGS KBUILD_HOSTLDLIBS
@@ -507,7 +511,7 @@ dt_h := include/generated/dt.h
 
 no-dot-config-targets := clean clobber mrproper distclean \
 			 help %docs check% coccicheck \
-			 ubootversion backup tests check qcheck tcheck
+			 ubootversion backup tests check qcheck tcheck tools-only
 
 config-targets := 0
 mixed-targets  := 0
@@ -777,6 +781,7 @@ libs-y += drivers/power/ \
 	drivers/power/battery/ \
 	drivers/power/regulator/
 libs-y += drivers/spi/
+libs-$(CONFIG_ARCH_GLL) += drivers/stm/
 libs-$(CONFIG_FMAN_ENET) += drivers/net/fm/
 libs-$(CONFIG_SYS_FSL_DDR) += drivers/ddr/fsl/
 libs-$(CONFIG_SYS_FSL_MMDC) += drivers/ddr/fsl/
@@ -807,6 +812,7 @@ libs-$(CONFIG_UNIT_TEST) += test/
 libs-$(CONFIG_UT_ENV) += test/env/
 libs-$(CONFIG_UT_OPTEE) += test/optee/
 libs-$(CONFIG_UT_OVERLAY) += test/overlay/
+libs-$(CONFIG_SPACEX) += spacex/
 
 libs-y += $(if $(BOARDDIR),board/$(BOARDDIR)/)
 
@@ -888,6 +894,7 @@ endif
 INPUTS-y += u-boot.srec u-boot.bin u-boot.sym System.map binary_size_check
 
 INPUTS-$(CONFIG_ONENAND_U_BOOT) += u-boot-onenand.bin
+INPUTS-$(CONFIG_SPIBOOT) += u-boot.spi
 ifeq ($(CONFIG_SPL_FSL_PBL),y)
 INPUTS-$(CONFIG_RAMBOOT_PBL) += u-boot-with-spl-pbl.bin
 else
@@ -1394,6 +1401,17 @@ u-boot.itb: u-boot-nodtb.bin \
 	$(BOARD_SIZE_CHECK)
 endif
 
+u-boot.map: u-boot
+
+ifdef CONFIG_P1010
+FSL_SPI_HEADER_ARGS = --p1010
+else
+FSL_SPI_HEADER_ARGS =
+endif
+
+u-boot.spi: u-boot.bin u-boot.map
+	$(srctree)/tools/fsl_spi_header.py $(FSL_SPI_HEADER_ARGS) $^ > $@
+
 u-boot-spl.kwb: u-boot.img spl/u-boot-spl.bin FORCE
 	$(call if_changed,mkimage)
 
@@ -1647,6 +1665,13 @@ OBJCOPYFLAGS_u-boot-img-spl-at-end.bin := -I binary -O binary \
 u-boot-img-spl-at-end.bin: u-boot.img spl/u-boot-spl.bin FORCE
 	$(call if_changed,pad_cat)
 
+# On targets like ZynqMP, generate the Xilinx bin file (spl/boot.bin), pad it,
+# then append the U-Boot image file.
+OBJCOPYFLAGS_u-boot-img-spl.bin := -I binary -O binary \
+	--pad-to=$(CONFIG_SPL_PAD_TO) --gap-fill=0xff
+u-boot-img-spl.bin: spl/boot.bin u-boot.img FORCE
+	$(call if_changed,pad_cat)
+
 quiet_cmd_u-boot-elf ?= LD      $@
 	cmd_u-boot-elf ?= $(LD) u-boot-elf.o -o $@ \
 	-T u-boot-elf.lds --defsym=$(CONFIG_PLATFORM_ELFENTRY)=$(CONFIG_SYS_TEXT_BASE) \
@@ -1795,6 +1820,9 @@ prepare: prepare0
 # Use sed to remove leading zeros from PATCHLEVEL to avoid using octal numbers
 define filechk_version.h
 	(echo \#define PLAIN_VERSION \"$(UBOOTRELEASE)\"; \
+	echo \#define SPACEX_COMMIT \"$(SPACEX_COMMIT)\"; \
+	echo \#define SPACEX_BRANCH \"$(SPACEX_BRANCH)\"; \
+	echo \#define SPACEX_BUILD \"$(SPACEX_BUILD)\"; \
 	echo \#define U_BOOT_VERSION \"U-Boot \" PLAIN_VERSION; \
 	echo \#define U_BOOT_VERSION_NUM $(VERSION); \
 	echo \#define U_BOOT_VERSION_NUM_PATCH $$(echo $(PATCHLEVEL) | \

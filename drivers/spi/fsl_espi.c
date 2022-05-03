@@ -275,7 +275,11 @@ int espi_xfer(struct fsl_spi_slave *fsl,  uint cs, unsigned int bitlen,
 			}
 		}
 		if (data_in) {
+#ifndef CONFIG_SPACEX
 			memcpy(data_in, buffer + 2 * cmd_len, tran_len);
+#else
+			memcpy(data_in, buffer + rx_offset + cmd_len, tran_len);
+#endif  /* CONFIG_SPACEX */
 			if (*buffer == 0x0b) {
 				data_in += tran_len;
 				data_len -= tran_len;
@@ -349,14 +353,22 @@ void espi_setup_slave(struct fsl_spi_slave *fsl)
 	fsl->div16 = 0;
 	if ((spibrg / max_hz) > 32) {
 		fsl->div16 = ESPI_CSMODE_DIV16;
+#ifndef CONFIG_SPACEX
 		pm = spibrg / (max_hz * 16 * 2);
+#else /* !CONFIG_SPACEX */
+		pm = DIV_ROUND_UP(spibrg, max_hz * 16 * 2);
+#endif /* CONFIG_SPACEX */
 		if (pm > 16) {
 			pm = 16;
 			debug("max_hz is too low: %d Hz, %ld Hz is used.\n",
 			      max_hz, spibrg / (32 * 16));
 		}
 	} else {
+#ifndef CONFIG_SPACEX
 		pm = spibrg / (max_hz * 2);
+#else /* !CONFIG_SPACEX */
+		pm = DIV_ROUND_UP(spibrg, max_hz * 2);
+#endif /* CONFIG_SPACEX */
 	}
 	if (pm)
 		pm--;

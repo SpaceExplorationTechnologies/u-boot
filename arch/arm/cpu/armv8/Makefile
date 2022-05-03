@@ -45,3 +45,5 @@ obj-$(CONFIG_ARMV8_PSCI) += psci.o
 obj-$(CONFIG_ARCH_SUNXI) += lowlevel_init.o
 obj-$(CONFIG_TARGET_BCMNS3) += bcmns3/
 obj-$(CONFIG_XEN) += xen/
+obj-$(CONFIG_STM) += stm/
+obj-$(CONFIG_STM_GLLCFF) += stm/

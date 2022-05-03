@@ -478,6 +478,122 @@ static int do_mmc_erase(struct cmd_tbl *cmdtp, int flag,
 }
 #endif
 
+#ifdef CONFIG_SPACEX
+static int do_mmc_read8(struct cmd_tbl *cmdtp, int flag,
+		       int argc, char * const argv[])
+{
+	struct mmc *mmc;
+	u32 blk, cnt, n;
+	u64 blk8, cnt8;
+	void *addr;
+
+	if (argc != 4)
+		return CMD_RET_USAGE;
+
+	addr = (void *)simple_strtoul(argv[1], NULL, 0);
+	blk8 = simple_strtoull(argv[2], NULL, 0);
+	cnt8 = simple_strtoull(argv[3], NULL, 0);
+
+	mmc = init_mmc_device(curr_device, false);
+	if (!mmc)
+		return CMD_RET_FAILURE;
+
+	if (blk8 % mmc->read_bl_len || cnt8 % mmc->read_bl_len) {
+		printf("Bytes and count must be a multiple of block size (%d)\n",
+		       mmc->read_bl_len);
+		return CMD_RET_FAILURE;
+	}
+
+	blk = blk8 / mmc->read_bl_len;
+	cnt = cnt8 / mmc->read_bl_len;
+
+	printf("\nMMC read: dev # %d, block # %d, count %d ... ",
+	       curr_device, blk, cnt);
+
+	n = blk_dread(&mmc->block_dev, blk, cnt, addr);
+	printf("%d blocks read: %s\n", n, (n == cnt) ? "OK" : "ERROR");
+
+	return (n == cnt) ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
+}
+static int do_mmc_write8(struct cmd_tbl *cmdtp, int flag,
+			int argc, char * const argv[])
+{
+	struct mmc *mmc;
+	u32 blk, cnt, n;
+	u64 blk8, cnt8;
+	void *addr;
+
+	if (argc != 4)
+		return CMD_RET_USAGE;
+
+	addr = (void *)simple_strtoul(argv[1], NULL, 0);
+	blk8 = simple_strtoull(argv[2], NULL, 0);
+	cnt8 = simple_strtoull(argv[3], NULL, 0);
+
+	mmc = init_mmc_device(curr_device, false);
+	if (!mmc)
+		return CMD_RET_FAILURE;
+
+	if (blk8 % mmc->write_bl_len || cnt8 % mmc->write_bl_len) {
+		printf("Bytes and count must be a multiple of block size (%d)\n",
+		       mmc->write_bl_len);
+		return CMD_RET_FAILURE;
+	}
+
+	blk = blk8 / mmc->write_bl_len;
+	cnt = cnt8 / mmc->write_bl_len;
+
+	printf("\nMMC write: dev # %d, block # %d, count %d ... ",
+	       curr_device, blk, cnt);
+
+	if (mmc_getwp(mmc) == 1) {
+		printf("Error: card is write protected!\n");
+		return CMD_RET_FAILURE;
+	}
+	n = blk_dwrite(&mmc->block_dev, blk, cnt, addr);
+	printf("%d blocks written: %s\n", n, (n == cnt) ? "OK" : "ERROR");
+
+	return (n == cnt) ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
+}
+static int do_mmc_erase8(struct cmd_tbl *cmdtp, int flag,
+			 int argc, char * const argv[])
+{
+	struct mmc *mmc;
+	u32 blk8, cnt8, blk, cnt, n;
+
+	if (argc != 3)
+		return CMD_RET_USAGE;
+
+	blk8 = simple_strtoul(argv[1], NULL, 16);
+	cnt8 = simple_strtoul(argv[2], NULL, 16);
+
+	mmc = init_mmc_device(curr_device, false);
+	if (!mmc)
+		return CMD_RET_FAILURE;
+
+	if (blk8 % mmc->write_bl_len || cnt8 % mmc->write_bl_len) {
+		printf("Bytes and count must be a multiple of block size (%d)\n",
+		       mmc->write_bl_len);
+		return CMD_RET_FAILURE;
+	}
+
+	blk = blk8 / mmc->write_bl_len;
+	cnt = cnt8 / mmc->write_bl_len;
+
+	printf("\nMMC erase: dev # %d, block # %d, count %d ... ",
+	       curr_device, blk, cnt);
+
+	if (mmc_getwp(mmc) == 1) {
+		printf("Error: card is write protected!\n");
+		return CMD_RET_FAILURE;
+	}
+	n = blk_derase(&mmc->block_dev, blk, cnt);
+	printf("%d blocks erased: %s\n", n, (n == cnt) ? "OK" : "ERROR");
+
+	return (n == cnt) ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
+}
+#endif
+
 static int do_mmc_rescan(struct cmd_tbl *cmdtp, int flag,
 			 int argc, char *const argv[])
 {
@@ -943,6 +1059,11 @@ static struct cmd_tbl cmd_mmc[] = {
 #if CONFIG_IS_ENABLED(CMD_MMC_SWRITE)
 	U_BOOT_CMD_MKENT(swrite, 3, 0, do_mmc_sparse_write, "", ""),
 #endif
+#ifdef CONFIG_SPACEX
+	U_BOOT_CMD_MKENT(read8, 4, 1, do_mmc_read8, "", ""),
+	U_BOOT_CMD_MKENT(write8, 4, 0, do_mmc_write8, "", ""),
+	U_BOOT_CMD_MKENT(erase8, 3, 0, do_mmc_erase8, "", ""),
+#endif
 	U_BOOT_CMD_MKENT(rescan, 1, 1, do_mmc_rescan, "", ""),
 	U_BOOT_CMD_MKENT(part, 1, 1, do_mmc_part, "", ""),
 	U_BOOT_CMD_MKENT(dev, 3, 0, do_mmc_dev, "", ""),
@@ -1000,6 +1121,10 @@ U_BOOT_CMD(
 	"mmc write addr blk# cnt\n"
 #if CONFIG_IS_ENABLED(CMD_MMC_SWRITE)
 	"mmc swrite addr blk#\n"
+#endif
+#ifdef CONFIG_SPACEX
+	"mmc read8 addr offset cnt\n"
+	"mmc write8 addr offset cnt\n"
 #endif
 	"mmc erase blk# cnt\n"
 	"mmc rescan\n"

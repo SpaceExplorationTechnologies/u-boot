@@ -480,3 +480,30 @@ U_BOOT_CMD(
 );
 
 #endif  /* CONFIG_CMD_LINK_LOCAL */
+
+#if defined(CONFIG_CMD_RDATE)
+static int do_rdate(struct cmd_tbl *cmdtp, int flag, int argc,
+		    char * const argv[])
+{
+	if (argc < 2)
+		return CMD_RET_USAGE;
+
+	net_rdate_server = string_to_ip(argv[1]);
+	if (net_rdate_server.s_addr == 0)
+		return CMD_RET_USAGE;
+
+	if (net_loop(RDATE) < 0) {
+		printf("rdate failed: no response\n");
+		return CMD_RET_FAILURE;
+	}
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD(
+	rdate,		2,	1,	do_rdate,
+	"synchronize time via network",
+	"serverIp"
+);
+
+#endif  /* CONFIG_CMD_RDATE */

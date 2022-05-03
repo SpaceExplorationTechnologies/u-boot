@@ -1,0 +1,7 @@
+
+config SPACEX_CATSON_MODEMLINK
+    bool "Enables modemlink support for Catson"
+    depends on STM_GLLCFF
+    help
+      Enable the modemlink driver and all related drivers needed for
+      connectivity

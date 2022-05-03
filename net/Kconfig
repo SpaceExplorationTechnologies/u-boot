@@ -88,4 +88,28 @@ config SERVERIP_FROM_PROXYDHCP_DELAY_MS
 		receiving response from main DHCP server. Has no effect if
 		SERVERIP_FROM_PROXYDHCP is false.
 
+if SPACEX
+config NET_DO_NOT_TRY_ANOTHER
+	bool "Prevent network interface cycling"
+	default y
+	help
+	  Prevent network inferface cycling. This prevents the primary
+	  network inferface's DMA from being left enabled after U-Boot
+	  completes, as described in ticket PLAT-935.
+
+config TFTP_UTIMEOUT
+	bool "Use the non-standard utimeout TFTP option"
+	default y
+	help
+	  Use the non-standard utimeout tftp option instead of the standard RFC
+	  2349 timeout option. Using utimeout allows for timeouts < 1 second,
+	  which is impossible with the standard option.
+endif
+
+config PING_TIMEOUT
+	int "ping timeout length in ms"
+	default 10000
+	help
+	  Timeout in ms to wait for a ping response before failing.
+
 endif   # if NET

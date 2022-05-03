@@ -31,8 +31,13 @@
 #define debug(fmt, args...)
 #endif /* MII_DEBUG */
 
+#ifdef CONFIG_SPACEX
+LIST_HEAD(mii_devs);
+static struct mii_dev *current_mii = NULL;
+#else
 static struct list_head mii_devs;
 static struct mii_dev *current_mii;
+#endif
 
 /*
  * Lookup the mii_dev struct by the registered device name.
@@ -62,8 +67,10 @@ struct mii_dev *miiphy_get_dev_by_name(const char *devname)
  */
 void miiphy_init(void)
 {
+#ifndef CONFIG_SPACEX
 	INIT_LIST_HEAD(&mii_devs);
 	current_mii = NULL;
+#endif
 }
 
 struct mii_dev *mdio_alloc(void)

@@ -701,6 +701,9 @@ config LIB_ELF
 	  Support basic elf loading/validating functions.
 	  This supports for 32 bit and 64 bit versions.
 
+config LIB_XILINX
+	bool
+
 endmenu
 
 config PHANDLE_CHECK_SEQ

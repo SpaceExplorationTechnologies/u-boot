@@ -827,6 +827,7 @@ struct e1000_ffvt_entry {
 #define E1000_BPTC     0x040F4	/* Broadcast Packets TX Count - R/clr */
 #define E1000_TSCTC    0x040F8	/* TCP Segmentation Context TX - R/clr */
 #define E1000_TSCTFC   0x040FC	/* TCP Segmentation Context TX Fail - R/clr */
+#define E1000_PCS_LCTL 0x04208	/* PCS Link Control - RW */
 #define E1000_RXCSUM   0x05000	/* RX Checksum Control - RW */
 #define E1000_MTA      0x05200	/* Multicast Table Array - RW Array */
 #define E1000_RA       0x05400	/* Receive Address - RW Array */
@@ -1576,6 +1577,9 @@ struct e1000_hw {
 #define E1000_TCTL_RTLC   0x01000000	/* Re-transmit on late collision */
 #define E1000_TCTL_NRTU   0x02000000	/* No Re-transmit on underrun */
 #define E1000_TCTL_MULR   0x10000000    /* Multiple request support */
+
+/* PCS Link Control */
+#define E1000_PCS_LCTL_AN_ENABLE 0x00010000	/* Auto-Negotiate Enable */
 
 /* Receive Checksum Control */
 #define E1000_RXCSUM_PCSS_MASK 0x000000FF	/* Packet Checksum Start */

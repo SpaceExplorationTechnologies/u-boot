@@ -280,7 +280,8 @@ HOST_EXTRACFLAGS += -include $(srctree)/include/compiler.h \
 		-DUSE_HOSTCC \
 		-D__KERNEL_STRICT_NAMES \
 		-D_GNU_SOURCE \
-		-std=gnu99
+		-std=gnu99 \
+		-DCONFIG_SPACEX
 
 __build:	$(LOGO-y)
 

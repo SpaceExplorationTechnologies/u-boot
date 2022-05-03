@@ -388,6 +388,9 @@ int stdio_add_devices(void)
 #endif
 	if (IS_ENABLED(CONFIG_CBMEM_CONSOLE))
 		cbmemc_init();
+#ifdef CONFIG_SPACEX_TELEM
+	drv_telem_init();
+#endif
 
 	return 0;
 }

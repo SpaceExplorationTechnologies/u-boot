@@ -156,6 +156,14 @@ struct spi_slave {
 #define SPI_XFER_BEGIN		BIT(0)	/* Assert CS before transfer */
 #define SPI_XFER_END		BIT(1)	/* Deassert CS after transfer */
 #define SPI_XFER_ONCE		(SPI_XFER_BEGIN | SPI_XFER_END)
+
+#ifdef CONFIG_SPACEX
+	/*
+	 * When using SPI NOR,
+	 * Can be set to SF_SINGLE_FLASH or SF_DUAL_PARALLEL_FLASH
+	 */
+	u8 option;
+#endif /* CONFIG_SPACEX */
 };
 
 /**

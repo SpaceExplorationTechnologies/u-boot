@@ -83,7 +83,18 @@ extern unsigned long nand_env_oob_offset;
 # define ENV_HEADER_SIZE	(sizeof(uint32_t))
 #endif
 
+#if defined(CONFIG_SPACEX_ECC)
+
+#ifdef CONFIG_SYS_REDUNDAND_ENVIRONMENT
+#error CONFIG_SYS_REDUNDAND_ENVIRONMENT and CONFIG_SPACEX_ECC are mutually exclusive!
+#endif
+
+#include <spacex/ecc.h>
+#define ENV_SIZE ECC_DATA_SIZE(CONFIG_ENV_SIZE - ENV_HEADER_SIZE)
+
+#else /* CONFIG_SPACEX_ECC */
 #define ENV_SIZE (CONFIG_ENV_SIZE - ENV_HEADER_SIZE)
+#endif
 
 /*
  * If the environment is in RAM, allocate extra space for it in the malloc
@@ -105,6 +116,15 @@ typedef struct environment_s {
 	unsigned char	flags;		/* active/obsolete flags ENVF_REDUND_ */
 #endif
 	unsigned char	data[ENV_SIZE]; /* Environment data		*/
+#ifdef CONFIG_SPACEX_ECC
+	/*
+	 * We need to make sure this data structure is large enough to
+	 * receive the ECC encoded buffer containing the
+	 * environment. This is because the code to write the
+	 * environment to flash uses env_t as a buffer type.
+	 */
+	unsigned char	pad[CONFIG_ENV_SIZE - ECC_DATA_SIZE(CONFIG_ENV_SIZE)];
+#endif /* CONFIG_SPACEX_ECC */
 } env_t;
 
 #ifdef ENV_IS_EMBEDDED

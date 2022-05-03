@@ -2218,6 +2218,21 @@ e1000_setup_fiber_link(struct e1000_hw *hw)
 	int32_t ret_val;
 
 	DEBUGFUNC();
+#ifdef CONFIG_SPACEX_E1000_PCS_AUTONEG
+	ctrl = E1000_READ_REG(hw, PCS_LCTL);
+	ctrl |= E1000_PCS_LCTL_AN_ENABLE;
+	E1000_WRITE_REG(hw, PCS_LCTL, ctrl);
+	/* The code below expects the SERDES optical signal-detect to be on
+	 * Software-Defined Pin 1 (SDP1). Since this is a direct SGMII
+	 * connection, there are no optics, and SDP1 is floating.
+	 * So we drive it high here to comply with the expectations below
+	 * (the signal will read high, because we're driving it high),
+	 * rather than carry around a bunch of #ifdefs. */
+	ctrl = E1000_READ_REG(hw, CTRL);
+	ctrl |= (E1000_CTRL_SWDPIN1 | E1000_CTRL_SWDPIO1);
+	E1000_WRITE_REG(hw, CTRL, ctrl);
+#endif  /* CONFIG_SPACEX_E1000_PCS_AUTONEG */
+
 	/* On adapters with a MAC newer that 82544, SW Defineable pin 1 will be
 	 * set when the optics detect a signal. On older adapters, it will be
 	 * cleared when there is a signal
@@ -2228,8 +2243,13 @@ e1000_setup_fiber_link(struct e1000_hw *hw)
 	else
 		signal = 0;
 
+#ifndef CONFIG_SPACEX
 	printf("signal for %s is %x (ctrl %08x)!!!!\n", hw->name, signal,
 	       ctrl);
+#else
+	DEBUGOUT("signal for %s is %x (ctrl %08x)!!!!\n", hw->name, signal,
+		 ctrl);
+#endif  /* CONFIG_SPACEX */
 	/* Take the link out of reset */
 	ctrl &= ~(E1000_CTRL_LRST);
 
@@ -5030,7 +5050,11 @@ e1000_set_media_type(struct e1000_hw *hw)
 			/* The STATUS_TBIMODE bit is reserved or reused
 			 * for the this device.
 			 */
+#ifndef CONFIG_SPACEX_E1000_IGB_USES_SERDES
 			hw->media_type = e1000_media_type_copper;
+#else
+			hw->media_type = e1000_media_type_fiber;
+#endif /* CONFIG_SPACEX_E1000_IGB_USES_SERDES */
 			break;
 		default:
 			status = E1000_READ_REG(hw, STATUS);
@@ -5109,6 +5133,7 @@ e1000_sw_init(struct e1000_hw *hw)
 	e1000_set_media_type(hw);
 
 	if (hw->mac_type >= e1000_82543) {
+#ifndef CONFIG_SPACEX_E1000_IGB_USES_SERDES
 		uint32_t status = E1000_READ_REG(hw, STATUS);
 
 		if (status & E1000_STATUS_TBIMODE) {
@@ -5119,6 +5144,8 @@ e1000_sw_init(struct e1000_hw *hw)
 			hw->media_type = e1000_media_type_copper;
 		}
 	} else {
+#endif /* !CONFIG_SPACEX_E1000_IGB_USES_SERDES */
+		DEBUGOUT("assuming fiber interface\n");
 		hw->media_type = e1000_media_type_fiber;
 	}
 
@@ -5600,7 +5627,11 @@ static int e1000_init_one(struct e1000_hw *hw, int cardnum, pci_dev_t devno,
 /* Put the name of a device in a string */
 static void e1000_name(char *str, int cardnum)
 {
+#ifndef CONFIG_SPACEX_E1000_ETH_NUMBER
 	sprintf(str, "e1000#%u", cardnum);
+#else
+	sprintf(str, "eth%u", CONFIG_SPACEX_E1000_ETH_BASE_NUMBER + cardnum);
+#endif /* CONFIG_SPACEX_E1000_ETH_NUMBER */
 }
 
 #ifndef CONFIG_DM_ETH
@@ -5825,6 +5856,29 @@ static int do_e1000(struct cmd_tbl *cmdtp, int flag, int argc,
 		return do_e1000_spi(cmdtp, hw, argc - 3, argv + 3);
 #endif
 
+#ifdef CONFIG_SPACEX_CMD_E1000_PHY
+	if (!strcmp(argv[2], "phy") && (argc >= 4)) {
+		unsigned long reg;
+
+		reg = simple_strtoul(argv[3], NULL, 0);
+		if (argc >= 5) {
+			return e1000_write_phy_reg(hw,
+						reg,
+						simple_strtoul(argv[4],
+							NULL,
+							0));
+		} else {
+			uint16_t value;
+			int retval = e1000_read_phy_reg(hw,
+							reg,
+							&value);
+			if (retval == 0)
+				printf("0x%04x\n", value);
+			return retval;
+		}
+	}
+#endif  /* CONFIG_SPACEX_CMD_E1000_PHY */
+
 	cmd_usage(cmdtp);
 	return 1;
 }
@@ -5839,6 +5893,9 @@ U_BOOT_CMD(
 	"e1000 <card#> spi program <addr> <offset> <length>\n"
 	"e1000 <card#> spi checksum [update]\n"
 #endif
+#ifdef CONFIG_SPACEX_CMD_E1000_PHY
+	"e1000 <card#> phy <regnum> [<value>]\n"
+#endif  /* CONFIG_SPACEX_CMD_E1000_PHY */
 	"       - Manage the Intel E1000 PCI device"
 );
 #endif /* not CONFIG_CMD_E1000 */

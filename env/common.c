@@ -21,6 +21,10 @@
 #include <malloc.h>
 #include <u-boot/crc.h>
 
+#ifdef CONFIG_SPACEX_ECC
+#include <spacex/ecc.h>
+#endif /* CONFIG_SPACEX_ECC */
+
 DECLARE_GLOBAL_DATA_PTR;
 
 /************************************************************************
@@ -115,16 +119,43 @@ int env_import(const char *buf, int check, int flags)
 {
 	env_t *ep = (env_t *)buf;
 
+#ifdef CONFIG_SPACEX_ECC
+	/*
+	 * The layout in flash is as follows: 4-byte CRC (unused,
+	 * always 0), followed by the ECC-encoded data. So when we
+	 * access ep->data below, it points to the ECC-encoded data,
+	 * and we substract ENV_HEADER_SIZE to the size, which
+	 * corresponds to the CRC.
+	 */
+	unsigned long decoded = ENV_SIZE;
+	int rc = ecc_decode(ep->data, CONFIG_ENV_SIZE - ENV_HEADER_SIZE,
+			    &ep->data, &decoded, 1, &num_ecc_errors);
+	if (!rc) {
+		env_set_default("!failed to decode", 0);
+		return 0;
+	} else if (rc == -1) {
+		printf("Environment is not ECC-armored\n");
+#endif /* CONFIG_SPACEX_ECC */
+
 	if (check) {
 		uint32_t crc;
 
 		memcpy(&crc, &ep->crc, sizeof(crc));
 
+#ifndef CONFIG_SPACEX_ECC
 		if (crc32(0, ep->data, ENV_SIZE) != crc) {
+#else
+		if (crc32(0, ep->data, CONFIG_ENV_SIZE - ENV_HEADER_SIZE) !=
+		    crc) {
+#endif /* CONFIG_SPACEX_ECC */
 			env_set_default("bad CRC", 0);
 			return -ENOMSG; /* needed for env_load() */
 		}
 	}
+
+#ifdef CONFIG_SPACEX_ECC
+	}
+#endif /* CONFIG_SPACEX_ECC */
 
 	if (himport_r(&env_htab, (char *)ep->data, ENV_SIZE, '\0', flags, 0,
 			0, NULL)) {
@@ -234,6 +265,17 @@ int env_export(env_t *env_out)
 	char *res;
 	ssize_t	len;
 
+#ifdef CONFIG_SPACEX_ECC
+	/*
+	 * We can't encode in place, so we use a temporary buffer on the stack.
+	 */
+	env_t env;
+	env_t *env_out_saved = env_out;
+	int ret;
+
+	env_out = &env;
+#endif /* CONFIG_SPACEX_ECC */
+
 	res = (char *)env_out->data;
 	len = hexport_r(&env_htab, '\0', 0, &res, ENV_SIZE, 0, NULL);
 	if (len < 0) {
@@ -241,7 +283,24 @@ int env_export(env_t *env_out)
 		return 1;
 	}
 
+#ifndef CONFIG_SPACEX_ECC
 	env_out->crc = crc32(0, env_out->data, ENV_SIZE);
+#else
+	/*
+	 * See the comment in env_import() about the layout in flash.
+	 */
+	unsigned long encoded = CONFIG_ENV_SIZE - ENV_HEADER_SIZE;
+	ret = ecc_encode(env.data, ENV_SIZE, env_out_saved->data, &encoded);
+	if (!ret) {
+		pr_err("Environment is too large!\n");
+		return 1;
+	}
+
+	/*
+	 * We don't use the CRC when encoding with ECC.
+	 */
+	env_out_saved->crc = 0;
+#endif /* CONFIG_SPACEX_ECC */
 
 #ifdef CONFIG_SYS_REDUNDAND_ENVIRONMENT
 	env_out->flags = ++env_flags; /* increase the serial */

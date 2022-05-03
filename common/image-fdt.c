@@ -23,6 +23,10 @@
 #include <asm/io.h>
 #include <tee/optee.h>
 
+#ifdef CONFIG_SPACEX
+#include <spacex/common.h>
+#endif /* CONFIG_SPACEX */
+
 #ifndef CONFIG_SYS_FDT_PAD
 #define CONFIG_SYS_FDT_PAD 0x3000
 #endif
@@ -598,6 +602,10 @@ int image_setup_libfdt(bootm_headers_t *images, void *blob,
 			goto err;
 		}
 	}
+
+#ifdef CONFIG_SPACEX
+	spacex_populate_fdt_chosen(blob);
+#endif /* CONFIG_SPACEX */
 
 	/* Delete the old LMB reservation */
 	if (lmb)

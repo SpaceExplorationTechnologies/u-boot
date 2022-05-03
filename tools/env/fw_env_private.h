@@ -4,17 +4,6 @@
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  */
 
-/* Pull in the current config to define the default environment */
-#include <linux/kconfig.h>
-
-#ifndef __ASSEMBLY__
-#define __ASSEMBLY__ /* get only #defines from config.h */
-#include <config.h>
-#undef	__ASSEMBLY__
-#else
-#include <config.h>
-#endif
-
 /*
  * To build the utility with the static configuration
  * comment out the next line.

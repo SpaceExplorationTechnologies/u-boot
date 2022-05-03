@@ -823,7 +823,11 @@ void bootp_request(void)
 	iplen = BOOTP_HDR_SIZE - OPT_FIELD_SIZE + extlen;
 	pktlen = eth_hdr_size + IP_UDP_HDR_SIZE + iplen;
 	bcast_ip.s_addr = 0xFFFFFFFFL;
+#ifndef CONFIG_SPACEX
 	net_set_udp_header(iphdr, bcast_ip, PORT_BOOTPS, PORT_BOOTPC, iplen);
+#else
+	net_set_udp_header(iphdr, bcast_ip, PORT_BOOTPS, PORT_BOOTPC, iplen, 0);
+#endif /* CONFIG_SPACEX */
 	net_set_timeout_handler(bootp_timeout, bootp_timeout_handler);
 
 #if defined(CONFIG_CMD_DHCP)
@@ -1035,7 +1039,11 @@ static void dhcp_send_request_packet(struct bootp_hdr *bp_offer)
 	iplen = BOOTP_HDR_SIZE - OPT_FIELD_SIZE + extlen;
 	pktlen = eth_hdr_size + IP_UDP_HDR_SIZE + iplen;
 	bcast_ip.s_addr = 0xFFFFFFFFL;
+#ifndef CONFIG_SPACEX
 	net_set_udp_header(iphdr, bcast_ip, PORT_BOOTPS, PORT_BOOTPC, iplen);
+#else
+	net_set_udp_header(iphdr, bcast_ip, PORT_BOOTPS, PORT_BOOTPC, iplen, 0);
+#endif /* CONFIG_SPACEX */
 
 #ifdef CONFIG_BOOTP_DHCP_REQUEST_DELAY
 	udelay(CONFIG_BOOTP_DHCP_REQUEST_DELAY);

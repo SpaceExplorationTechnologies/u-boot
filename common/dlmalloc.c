@@ -1299,10 +1299,20 @@ Void_t* mALLOc(bytes) size_t bytes;
   /* check if mem_malloc_init() was run */
   if ((mem_malloc_start == 0) && (mem_malloc_end == 0)) {
     /* not initialized yet */
+#ifdef CONFIG_SPACEX
+    printf("ERROR: %s() called before init\n", __func__);
+#endif /* CONFIG_SPACEX */
     return NULL;
   }
 
+#ifdef CONFIG_SPACEX
+  if ((long)bytes < 0) {
+    printf("ERROR: %s() called with too-large a size\n", __func__);
+    return NULL;
+  }
+#else /* CONFIG_SPACEX */
   if ((long)bytes < 0) return NULL;
+#endif /* CONFIG_SPACEX */
 
   nb = request2size(bytes);  /* padded request size; */
 
@@ -1505,7 +1515,18 @@ Void_t* mALLOc(bytes) size_t bytes;
     /* Try to extend */
     malloc_extend_top(nb);
     if ( (remainder_size = chunksize(top) - nb) < (long)MINSIZE)
+#ifdef CONFIG_SPACEX
+    {
+      printf("ERROR: %s(%#zx) called, but insufficient heap remains\n",
+             __func__, bytes);
+#ifdef DEBUG
+      malloc_stats();
+#endif
       return NULL; /* propagate failure */
+    }
+#else /* CONFIG_SPACEX */
+      return NULL; /* propagate failure */
+#endif /* CONFIG_SPACEX */
   }
 
   victim = top;
@@ -1714,7 +1735,14 @@ Void_t* rEALLOc(oldmem, bytes) Void_t* oldmem; size_t bytes;
   }
 #endif
 
+#ifdef CONFIG_SPACEX
+  if ((long)bytes < 0) {
+    printf("ERROR: %s() called with too-large a size\n", __func__);
+    return NULL;
+  }
+#else /* CONFIG_SPACEX */
   if ((long)bytes < 0) return NULL;
+#endif /* CONFIG_SPACEX */
 
   /* realloc of null is supposed to be same as malloc */
   if (oldmem == NULL) return mALLOc(bytes);
@@ -1926,7 +1954,14 @@ Void_t* mEMALIGn(alignment, bytes) size_t alignment; size_t bytes;
   mchunkptr remainder;        /* spare room at end to split off */
   long      remainder_size;   /* its size */
 
+#ifdef CONFIG_SPACEX
+  if ((long)bytes < 0) {
+    printf("ERROR: %s() called with too-large a size\n", __func__);
+    return NULL;
+  }
+#else /* CONFIG_SPACEX */
   if ((long)bytes < 0) return NULL;
+#endif /* CONFIG_SPACEX */
 
 #if CONFIG_VAL(SYS_MALLOC_F_LEN)
 	if (!(gd->flags & GD_FLG_FULL_MALLOC_INIT)) {
@@ -1987,6 +2022,16 @@ Void_t* mEMALIGn(alignment, bytes) size_t alignment; size_t bytes;
     }
     /* Fall through to original NULL check and chunk splitting logic */
   }
+
+#ifdef CONFIG_SPACEX
+  if (m == NULL) {
+      printf("ERROR: %s(%#zx) called, but insufficient heap remains\n",
+             __func__, bytes);
+#ifdef DEBUG
+      malloc_stats();
+#endif
+  }
+#endif /* CONFIG_SPACEX */
 
   if (m == NULL) return NULL; /* propagate failure */
 

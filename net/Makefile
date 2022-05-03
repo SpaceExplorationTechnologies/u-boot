@@ -29,6 +29,7 @@ obj-$(CONFIG_CMD_TFTPBOOT) += tftp.o
 obj-$(CONFIG_UDP_FUNCTION_FASTBOOT)  += fastboot.o
 obj-$(CONFIG_CMD_WOL)  += wol.o
 obj-$(CONFIG_PROT_UDP) += udp.o
+obj-$(CONFIG_CMD_RDATE) += rdate.o
 
 # Disable this warning as it is triggered by:
 # sprintf(buf, index ? "foo%d" : "foo", index)

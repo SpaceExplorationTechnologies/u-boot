@@ -16,6 +16,9 @@
 #include <vsprintf.h>
 #include <asm/cache.h>
 #include <asm/global_data.h>
+#ifdef CONFIG_SPACEX
+#include <malloc.h>
+#endif /* CONFIG_SPACEX */
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -104,6 +107,9 @@ int do_bdinfo(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	bdinfo_print_num_l("flashsize", (ulong)bd->bi_flashsize);
 	bdinfo_print_num_l("flashoffset", (ulong)bd->bi_flashoffset);
 	printf("baudrate    = %u bps\n", gd->baudrate);
+#ifdef CONFIG_SPACEX
+	bdinfo_print_num_l("mem_malloc_start", mem_malloc_start);
+#endif /* CONFIG_SPACEX */
 	bdinfo_print_num_l("relocaddr", gd->relocaddr);
 	bdinfo_print_num_l("reloc off", gd->reloc_off);
 	printf("%-12s= %u-bit\n", "Build", (uint)sizeof(void *) * 8);

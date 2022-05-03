@@ -16,6 +16,9 @@
 #include <malloc.h>
 #include <spi.h>
 #include <spi_flash.h>
+#ifdef CONFIG_STM_FSM_SPI_FLASH /* For ST we use FSM SPI controller */
+#include <stm_spi_fsm.h>
+#endif
 #include <search.h>
 #include <errno.h>
 #include <uuid.h>
@@ -42,11 +45,20 @@ static int setup_flash_device(void)
 #if CONFIG_IS_ENABLED(DM_SPI_FLASH)
 	struct udevice *new;
 	int	ret;
-
+/*
+ * For ST we use FSM SPI controller which is not like a "traditional" SPI
+ * controller "
+ */
+#ifdef CONFIG_STM_FSM_SPI_FLASH
+	ret = spi_fsm_flash_probe(CONFIG_ENV_SPI_BUS,
+				  CONFIG_ENV_SPI_CS,
+				  CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE);
+#else
 	/* speed and mode will be read from DT */
 	ret = spi_flash_probe_bus_cs(CONFIG_ENV_SPI_BUS, CONFIG_ENV_SPI_CS,
 				     CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE,
 				     &new);
+#endif
 	if (ret) {
 		env_set_default("spi_flash_probe_bus_cs() failed", 0);
 		return ret;

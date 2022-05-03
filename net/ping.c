@@ -26,7 +26,11 @@ static void set_icmp_header(uchar *pkt, struct in_addr dest)
 	 */
 	struct icmp_hdr *icmp = (struct icmp_hdr *)(pkt + IP_HDR_SIZE);
 
+#ifndef CONFIG_SPACEX
 	net_set_ip_header(pkt, dest, net_ip, IP_ICMP_HDR_SIZE, IPPROTO_ICMP);
+#else
+	net_set_ip_header(pkt, dest, net_ip, IP_ICMP_HDR_SIZE, IPPROTO_ICMP, 0);
+#endif /* CONFIG_SPACEX */
 
 	icmp->type = ICMP_ECHO_REQUEST;
 	icmp->code = 0;
@@ -71,7 +75,11 @@ static void ping_timeout_handler(void)
 void ping_start(void)
 {
 	printf("Using %s device\n", eth_get_name());
+#ifndef CONFIG_SPACEX
 	net_set_timeout_handler(10000UL, ping_timeout_handler);
+#else
+	net_set_timeout_handler(CONFIG_PING_TIMEOUT, ping_timeout_handler);
+#endif
 
 	ping_send();
 }

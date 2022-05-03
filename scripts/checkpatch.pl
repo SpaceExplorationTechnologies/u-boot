@@ -2360,10 +2360,11 @@ sub u_boot_line {
 	}
 
 	# use if instead of #if
-	if ($realfile =~ /\.c$/ && $line =~ /^\+#if.*CONFIG.*/) {
-		WARN("PREFER_IF",
-		     "Use 'if (IS_ENABLED(CONFIG...))' instead of '#if or #ifdef' where possible\n" . $herecurr);
-	}
+	# Disabled by SpaceX
+	# if ($realfile =~ /\.c$/ && $line =~ /^\+#if.*CONFIG.*/) {
+	# 	WARN("PREFER_IF",
+	# 	     "Use 'if (IS_ENABLED(CONFIG...))' instead of '#if or #ifdef' where possible\n" . $herecurr);
+	# }
 
 	# use defconfig to manage CONFIG_CMD options
 	if ($line =~ /\+\s*#\s*(define|undef)\s+(CONFIG_CMD\w*)\b/) {
@@ -2719,10 +2720,6 @@ sub process {
 			if ($line !~ /^\s*$/) {
 				$commit_log_lines++;	#could be a $signature
 			}
-		} elsif ($has_commit_log && $commit_log_lines < 2) {
-			WARN("COMMIT_MESSAGE",
-			     "Missing commit description - Add an appropriate one\n");
-			$commit_log_lines = 2;	#warn only once
 		}
 
 # Check if the commit log has what seems like a diff which can confuse patch
@@ -5513,8 +5510,6 @@ sub process {
 						$sum_allowed += $_;
 					}
 					if ($sum_allowed == 0) {
-						WARN("BRACES",
-						     "braces {} are not necessary for any arm of this statement\n" . $herectx);
 					} elsif ($sum_allowed != $allow &&
 						 $seen != $allow) {
 						CHK("BRACES",
@@ -5568,9 +5563,6 @@ sub process {
 			if ($level == 0 && $block =~ /^\s*\{/ && !$allowed) {
 				my $cnt = statement_rawlines($block);
 				my $herectx = get_stat_here($linenr, $cnt, $here);
-
-				WARN("BRACES",
-				     "braces {} are not necessary for single statement blocks\n" . $herectx);
 			}
 		}
 

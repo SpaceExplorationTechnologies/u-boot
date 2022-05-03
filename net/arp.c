@@ -24,11 +24,14 @@
 # define ARP_TIMEOUT		CONFIG_ARP_TIMEOUT
 #endif
 
-
-#ifndef	CONFIG_NET_RETRY_COUNT
-# define ARP_TIMEOUT_COUNT	5	/* # of timeouts before giving up  */
+#ifdef CONFIG_SPACEX_ARP_RETRY
+#define ARP_TIMEOUT_COUNT	CONFIG_SPACEX_ARP_RETRY_COUNT
 #else
-# define ARP_TIMEOUT_COUNT	CONFIG_NET_RETRY_COUNT
+# ifndef CONFIG_NET_RETRY_COUNT
+#  define ARP_TIMEOUT_COUNT	5	/* # of timeouts before giving up  */
+# else
+#  define ARP_TIMEOUT_COUNT	CONFIG_NET_RETRY_COUNT
+# endif
 #endif
 
 struct in_addr net_arp_wait_packet_ip;

@@ -67,8 +67,11 @@ int dm_spi_claim_bus(struct udevice *dev)
 			speed = spi->max_hz;
 	}
 	if (!speed)
+#if !defined(CONFIG_SPACEX) || !defined(CONFIG_SF_DEFAULT_SPEED)
 		speed = SPI_DEFAULT_SPEED_HZ;
-
+#else /* !CONFIG_SPACEX || !CONFIG_SF_DEFAULT_SPEED */
+		speed = CONFIG_SF_DEFAULT_SPEED;
+#endif /* CONFIG_SPACEX && CONFIG_SF_DEFAULT_SPEED */
 	if (speed != spi->speed || mode != spi->mode) {
 		int ret = spi_set_speed_mode(bus, speed, slave->mode);
 
@@ -449,8 +452,13 @@ int spi_slave_of_to_plat(struct udevice *dev, struct dm_spi_slave_plat *plat)
 	int value;
 
 	plat->cs = dev_read_u32_default(dev, "reg", -1);
+#if !defined(CONFIG_SPACEX) || !defined(CONFIG_SF_DEFAULT_SPEED)
 	plat->max_hz = dev_read_u32_default(dev, "spi-max-frequency",
 					    SPI_DEFAULT_SPEED_HZ);
+#else /* !CONFIG_SPACEX || !CONFIG_SF_DEFAULT_SPEED */
+	plat->max_hz = dev_read_u32_default(dev, "spi-max-frequency",
+					    CONFIG_SF_DEFAULT_SPEED);
+#endif /* CONFIG_SPACEX && CONFIG_SF_DEFAULT_SPEED */
 	if (dev_read_bool(dev, "spi-cpol"))
 		mode |= SPI_CPOL;
 	if (dev_read_bool(dev, "spi-cpha"))

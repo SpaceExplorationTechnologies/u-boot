@@ -232,9 +232,11 @@ static int fit_image_process_sig(const char *keydir, void *keydest,
 		printf("Failed to sign '%s' signature node in '%s' image node: %d\n",
 		       node_name, image_name, ret);
 
+#ifndef CONFIG_SPACEX
 		/* We allow keys to be missing */
 		if (ret == -ENOENT)
 			return 0;
+#endif
 		return -1;
 	}
 
@@ -949,9 +951,11 @@ static int fit_config_process_sig(const char *keydir, void *keydest,
 		printf("Failed to sign '%s' signature node in '%s' conf node\n",
 		       node_name, conf_name);
 
+#ifndef CONFIG_SPACEX
 		/* We allow keys to be missing */
 		if (ret == -ENOENT)
 			return 0;
+#endif
 		return -1;
 	}
 
